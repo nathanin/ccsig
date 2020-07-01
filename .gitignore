@@ -1,0 +1,12 @@
+*.csv
+*.tsv
+*.rda
+*.RData
+*.h5ad
+*.loom
+*.h5
+*.png
+*.svg
+*.tiff
+*.tif
+*.jpg

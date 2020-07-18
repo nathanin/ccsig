@@ -6,48 +6,54 @@ import os
 from glob import glob
 import argparse
 
-adata_path = '../samples_trimmed/pembroRT_TNBC_AllCells.clust.h5ad'
-groupkey = 'CellType'
-keep = ['Tcell']
+import ray
+import logging
 
-# Key to group cells for calculating a background
-groupby_key = 'CellType_v3'
+# adata_path = '../samples_trimmed/pembroRT_TNBC_AllCells.clust.h5ad'
+# groupkey = 'CellType'
+# keep = ['Tcell']
 
-adata = sc.read_h5ad(adata_path)
-print(f'Loaded adata {adata.shape}')
+# # Key to group cells for calculating a background
+# groupby_key = 'CellType_v3'
 
-# if groupkey in adata.obs.columns:
-#   subsample = adata.obs[groupkey].isin(keep)
-#   adata = adata[subsample, :]
-#   print(f'Subsampled adata {adata.shape}')
+# adata = sc.read_h5ad(adata_path)
+# print(f'Loaded adata {adata.shape}')
 
-## Subset genes to clean up the background calculation
-sc.pp.filter_genes(adata, min_cells = 100)
-print(f'Reduced by thresholding the number of genes: {adata.shape}')
+# # if groupkey in adata.obs.columns:
+# #   subsample = adata.obs[groupkey].isin(keep)
+# #   adata = adata[subsample, :]
+# #   print(f'Subsampled adata {adata.shape}')
 
-## Normalize counts per cell
-sc.pp.normalize_total(adata, target_sum=10000)
-sc.pp.log1p(adata)
+# ## Subset genes to clean up the background calculation
+# sc.pp.filter_genes(adata, min_cells = 100)
+# print(f'Reduced by thresholding the number of genes: {adata.shape}')
 
-
-# Get a list of background genes and rank them for the rank-guided background
-# selection later  
-# REF: https://github.com/theislab/scanpy/blob/master/scanpy/tools/_score_genes.py
-all_genes = set(adata.var_names)
-
-## Binning method i.e. Seurat and Scanpy
-gene_avg = pd.Series(np.squeeze(np.array(np.mean(adata.X, axis=0))), index=all_genes)
-n_items = len(gene_avg) / 20 ## <-- expression bins; use fewer bins to go faster
-gene_cut = gene_avg.rank(method='min') // n_items
+# ## Normalize counts per cell
+# sc.pp.normalize_total(adata, target_sum=10000)
+# sc.pp.log1p(adata)
 
 
+# # Get a list of background genes and rank them for the rank-guided background
+# # selection later  
+# # REF: https://github.com/theislab/scanpy/blob/master/scanpy/tools/_score_genes.py
+# all_genes = set(adata.var_names)
+
+# ## Binning method i.e. Seurat and Scanpy
+# gene_avg = pd.Series(np.squeeze(np.array(np.mean(adata.X, axis=0))), index=all_genes)
+# n_items = len(gene_avg) / 20 ## <-- expression bins; use fewer bins to go faster
+# gene_cut = gene_avg.rank(method='min') // n_items
 
 
-def score_genelist(gene_list):
+
+@ray.remote
+def score_genelist(gex, var_names, cell_groups, gene_list):
+  # logger = logging.getLogger()
+  logging.basicConfig(level='INFO')
+
   list_name = os.path.splitext(os.path.basename(gene_list))[0]
 
-  if list_name not in adata.var_names:
-    print(f'WARN: gene {list_name} not found in adata.var_names. skipping')
+  if list_name not in var_names:
+    logging.info(f'WARN: gene {list_name} not found in adata.var_names. skipping')
     return None
 
   with open(gene_list, 'r') as f:
@@ -55,34 +61,34 @@ def score_genelist(gene_list):
   og_len = len(genes)
 
   # Restrict to genes in the dataset
-  genes = [g for g in genes if g in adata.var_names]
+  genes = [g for g in genes if g in var_names]
   red_len = len(genes)
-  print(f'{list_name:<10} loaded {og_len} restricted to {red_len}')
+  logging.info(f'{list_name:<10} loaded {og_len} restricted to {red_len}')
 
   if red_len < 5: 
-    print(f'WARN got {len(genes)} genes for list {list_name}. Skipping.')
+    logging.info(f'WARN got {len(genes)} genes for list {list_name}. Skipping.')
     return None
 
   genes = set(genes)
 
 
-  X_genes = adata.X[:, adata.var_names.isin(genes)].toarray()
-  X_base_gene = np.squeeze(adata.X[:, adata.var_names == list_name].toarray()) # Expression of the receptor, per cell.
+  X_genes = gex[:, var_names.isin(genes)].toarray()
+  X_base_gene = np.squeeze(gex[:, var_names == list_name].toarray()) # Expression of the receptor, per cell.
 
   ## ------------------    Difference from cell type average expression method
   ## I for sure know theres a less clunky way to do this 
   ## that probably has to do with diagonals
   ## 1. Find the average expression of the genes in our set, per cell type
-  groups = adata.obs[groupby_key].values
-  u_groups = np.unique(groups)
+  # groups = adata.obs[groupby_key].values
+  u_groups = np.unique(cell_groups)
   group_avgs = {}
   for u in u_groups:
-    avg = np.mean(adata.X[groups == u][:, adata.var_names.isin(genes)].toarray(), axis=0)
+    avg = np.mean(gex[cell_groups == u][:, var_names.isin(genes)].toarray(), axis=0)
     group_avgs[u] = avg # 1 x n_genes
 
   # Set up the difference matrix
   gene_diffs = np.zeros_like(X_genes)
-  # print(f'INFO gene diffs set up ~ {gene_diffs.shape} {gene_diffs.dtype}')
+  # print(f'INFO gene diffs set up ~ {gene_diffs.shape} {gene_diffs.dtype}'
   for i, g in enumerate(genes):
     # pull out the gene's expression vector for all cells
     X_gene = X_genes[:, i]
@@ -92,11 +98,11 @@ def score_genelist(gene_list):
     
     # Loop over groups 
     for u in u_groups:
-      indexer = groups == u
+      indexer = cell_groups == u
       avg = group_avgs[u][i]
       X_gene_group = X_gene[indexer]
-      # diff = np.abs(avg - X_gene_group)                 # <------------- Absolute value difference from mean
-      diff = np.abs(avg - X_gene_group) / avg           # <------------- Percent difference from mean
+      diff = np.abs(avg - X_gene_group)             # <------------- Absolute value difference from mean
+      # diff = np.abs(avg - X_gene_group) / avg     # <------------- Percent difference from mean
       diff[np.isnan(diff)] = 0
       X_gene_difference[indexer] = diff
     
@@ -121,10 +127,8 @@ def score_genelist(gene_list):
   # scores = np.squeeze(np.mean(X_genes, axis=-1) - np.mean(X_background, axis=-1))
 
 
-
   ## ---------------------- Straight up mean expression
   # scores = np.squeeze(np.array(np.mean(X_genes, axis=-1)))
   # scores = scores * X_base_gene
 
-  list_scores = {list_name: scores}
-  return list_scores
+  return {list_name: scores}

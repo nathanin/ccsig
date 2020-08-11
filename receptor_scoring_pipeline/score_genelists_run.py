@@ -11,7 +11,7 @@ import argparse
 import logging
 
 import ray
-import multiprocessing
+# import multiprocessing
 
 from scipy.sparse import csr_matrix
 from score_genelists_def import score_genelist
@@ -37,8 +37,8 @@ parser.add_argument(
 parser.add_argument('adata_path')
 parser.add_argument('groupby')
 parser.add_argument('--out', default=None, type=str)
-parser.add_argument('-j', default=8, type=int)
-args = parser.parse_args()
+parser.add_argument('-j', '--n_jobs', default=8, type=int)
+ARGS = parser.parse_args()
 
 
 logger = logging.getLogger('RECEPTOR SCORE')
@@ -49,13 +49,17 @@ ch.setFormatter(formatter)
 logger.addHandler(ch)
 
 
-for k, v in args.__dict__.items():
+for k, v in ARGS.__dict__.items():
   logger.info(f'{k}:\t{v}')
 
 
-ray.init(num_cpus=args.j)
+# // init 
+ray.init(num_cpus=ARGS.n_jobs)
 
-adata = sc.read_h5ad(args.adata_path)
+
+
+# // load data
+adata = sc.read_h5ad(ARGS.adata_path)
 
 sc.pp.filter_genes(adata, min_cells = 10)
 logger.info(f'Reduced by thresholding the number of genes: {adata.shape}')
@@ -64,18 +68,18 @@ logger.info('Apply preprocessing: count normalizing to 10,000 and logging counts
 sc.pp.normalize_total(adata, target_sum=10000)
 sc.pp.log1p(adata)
 
-gene_lists = sorted(glob(f'{args.genelist_dir}/*.txt'))
+gene_lists = sorted(glob(f'{ARGS.genelist_dir}/*.txt'))
 logger.info(f'Loaded {len(gene_lists)} gene lists')
 
-cell_groups = np.array(adata.obs[args.groupby])
+cell_groups = np.array(adata.obs[ARGS.groupby])
 
 
+
+# // make data available to multiple workers
 logger.info(f'PUTting var_names, gex, and cell_groups')
 var_names = adata.var_names
 var_names_id = ray.put(var_names)
-
 gex_id = ray.put(adata.X)
-
 cell_groups_id = ray.put(cell_groups)
 
 
@@ -84,7 +88,10 @@ cell_groups_id = ray.put(cell_groups)
 # p.close()
 # p.join()
 
+# defines the compute tasks
 futures = [score_genelist.remote(gex_id, var_names_id, cell_groups_id, gene_list) for gene_list in gene_lists]
+
+# this little guy triggers the big compute
 ret = ray.get(futures)
 
 logger.info(f'Returned {len(ret)}')
@@ -118,13 +125,13 @@ rscores = AnnData(csr_matrix(list_scores.values),
                   )
 
 
-if args.out is None:
-  gld = args.genelist_dir
+if ARGS.out is None:
+  gld = ARGS.genelist_dir
   if gld.endswith('/'):
     gld = gld[:-1]
   ad_out = gld + '_scores.h5ad'
 else:
-  ad_out = args.out
+  ad_out = ARGS.out
 
 logger.info(f'Writing to {ad_out}')
 # list_scores.to_csv(df_out, float_format='%.5f')

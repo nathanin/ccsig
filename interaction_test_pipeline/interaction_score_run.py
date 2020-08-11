@@ -103,7 +103,7 @@ constraints_R_id = ray.put(constraints_R)
 # // construct the compute tasks to be distributed
 futures = []
 interaction_channels = []
-for r in receptors[:2]:
+for r in receptors:
   ligands = rl_pairs[r]
   # Here, filter ligands for presence in the gene expression
   ligands = [l for l in ligands if l in adata_var]

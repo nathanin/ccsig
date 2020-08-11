@@ -103,3 +103,32 @@ Functions providing graphical feedback from the analysis
  A list of utility functions
 
  - Fast query a recetpor / ligand match
+
+
+
+ ---
+
+ ## An interface
+
+ With this module structred like this:
+
+```
+.
+├── data
+│   └── receptor_genelists_2020_06_30
+├── expression_test_pipeline
+│   ├── __pycache__
+│   └── test
+├── fisher_test_pipeline
+│   ├── predicted_signaling
+│   ├── __pycache__
+│   └── test
+├── interaction_score_def.py
+├── notebooks
+├── __pycache__
+└── receptor_scoring_pipeline
+```
+
+We want a single entrypoint script at the top level that lets you call the different scoring 
+pipelines from the terminal.
+

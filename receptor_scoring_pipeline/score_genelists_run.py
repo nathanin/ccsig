@@ -30,7 +30,10 @@ Otherwise run scoring and create a table for single cells
 '''
 
 parser = argparse.ArgumentParser()
-parser.add_argument('genelist_dir')
+parser.add_argument(
+  'genelist_dir', 
+  help='A directory containing gene lists in *.txt format'
+)
 parser.add_argument('adata_path')
 parser.add_argument('groupby')
 parser.add_argument('--out', default=None, type=str)
@@ -38,9 +41,16 @@ parser.add_argument('-j', default=8, type=int)
 args = parser.parse_args()
 
 
-logging.basicConfig(level='INFO')
+logger = logging.getLogger('RECEPTOR SCORE')
+logger.setLevel('INFO')
+ch = logging.StreamHandler()
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+ch.setFormatter(formatter)
+logger.addHandler(ch)
+
+
 for k, v in args.__dict__.items():
-  logging.info(f'{k}:\t{v}')
+  logger.info(f'{k}:\t{v}')
 
 
 ray.init(num_cpus=args.j)
@@ -48,18 +58,19 @@ ray.init(num_cpus=args.j)
 adata = sc.read_h5ad(args.adata_path)
 
 sc.pp.filter_genes(adata, min_cells = 10)
-logging.info(f'Reduced by thresholding the number of genes: {adata.shape}')
+logger.info(f'Reduced by thresholding the number of genes: {adata.shape}')
 
+logger.info('Apply preprocessing: count normalizing to 10,000 and logging counts')
 sc.pp.normalize_total(adata, target_sum=10000)
 sc.pp.log1p(adata)
 
 gene_lists = sorted(glob(f'{args.genelist_dir}/*.txt'))
-logging.info(f'Loaded {len(gene_lists)} gene lists')
+logger.info(f'Loaded {len(gene_lists)} gene lists')
 
 cell_groups = np.array(adata.obs[args.groupby])
 
 
-logging.info(f'PUTting var_names, gex, and cell_groups')
+logger.info(f'PUTting var_names, gex, and cell_groups')
 var_names = adata.var_names
 var_names_id = ray.put(var_names)
 
@@ -76,7 +87,7 @@ cell_groups_id = ray.put(cell_groups)
 futures = [score_genelist.remote(gex_id, var_names_id, cell_groups_id, gene_list) for gene_list in gene_lists]
 ret = ray.get(futures)
 
-logging.info(f'Returned {len(ret)}')
+logger.info(f'Returned {len(ret)}')
 
 list_scores = {}
 for d in ret:
@@ -87,17 +98,17 @@ for d in ret:
 x = []
 cols = []
 for k,v in list_scores.items():
-  logging.info(f'{k}: {v.shape}')
+  logger.info(f'{k}: {v.shape}')
   x.append(v)
   cols.append(k)
 
 x = np.stack(x, axis=1)
-logging.info(f'Creating scores DataFrame from x={x.shape}')
+logger.info(f'Creating scores DataFrame from x={x.shape}')
 
 list_scores = pd.DataFrame(x, index=adata.obs_names, columns=cols)
 list_scores.index.name = 'barcodes'
-logging.info(f'Created cell receptor score matrix: {list_scores.shape}')
-logging.info(f'Converting to AnnData')
+logger.info(f'Created cell receptor score matrix: {list_scores.shape}')
+logger.info(f'Converting to AnnData')
 
 # TODO add descriptive information in uns
 rscores = AnnData(csr_matrix(list_scores.values), 
@@ -115,6 +126,6 @@ if args.out is None:
 else:
   ad_out = args.out
 
-logging.info(f'Writing to {ad_out}')
+logger.info(f'Writing to {ad_out}')
 # list_scores.to_csv(df_out, float_format='%.5f')
 rscores.write(ad_out)

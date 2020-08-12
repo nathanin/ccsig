@@ -83,8 +83,8 @@ def _process_permutation(xL, xR, P, yL, yR, constraints_L, constraints_R, m_y_gr
   m_y_L = np.array([f'{m};{y}' for m, y in zip(constraints_L, yL)])
   m_y_R = np.array([f'{m};{y}' for m, y in zip(constraints_R, yR)])
 
-  L = group_cells(xL, m_y_L, u_y=m_y_groups, min_cells=min_cells)
-  R = group_cells(xR, m_y_R, u_y=m_y_groups, min_cells=min_cells)
+  L = group_cells(xL, m_y_L, u_y=m_y_groups, min_cells=min_cells, agg='sum')
+  R = group_cells(xR, m_y_R, u_y=m_y_groups, min_cells=min_cells, agg='mean')
 
   I_perm = calc_interactions(R, L, P)
 
@@ -213,8 +213,8 @@ def interaction_test(adata_in, r_adata_in,
   logging.info(f'{ligand} {receptor} xL: {xL.shape} xR: {xR.shape}')
 
   # Keep xL and xR around for permuting later
-  L = group_cells(xL, m_y_L, u_y=m_y_groups, min_cells=min_cells)
-  R = group_cells(xR, m_y_R, u_y=m_y_groups, min_cells=min_cells)
+  L = group_cells(xL, m_y_L, u_y=m_y_groups, min_cells=min_cells, agg='sum')
+  R = group_cells(xR, m_y_R, u_y=m_y_groups, min_cells=min_cells, agg='mean')
 
   # give the whole group to be interaction scored, which returns a dense np.ndarray
   # there are going to be __many__ elements which represent invalid combinations i.e. across buckets.

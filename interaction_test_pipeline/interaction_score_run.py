@@ -79,7 +79,7 @@ logger.info('Starting ray')
 ray.init(num_cpus=ARGS.n_jobs)
 
 
-# All of these will go to shared memory
+# // All of these will go to shared memory
 adata_in = adata.X
 r_adata_in = radata.X
 adata_var = np.array(adata.var_names)

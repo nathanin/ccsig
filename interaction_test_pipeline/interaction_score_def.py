@@ -189,7 +189,7 @@ def interaction_test(adata_in, r_adata_in,
   # Groupby array for receptor data and ligand data separately
   # yR = np.array(r_adata_in.obs[groupby])
   # yL = np.array(adata_in.obs[groupby])
-  u_y = list(set(np.unique(yR)).union(set(np.unique(yL)))) # "Y"
+  u_y = sorted(set(np.unique(yR)).union(set(np.unique(yL)))) # "Y" ; 
   # constraints_R = np.array(r_adata_in.obs[constraints])
   # constraints_L = np.array(adata_in.obs[constraints])
   u_constraints = list(set(np.unique(constraints_R)).union(set(np.unique(constraints_L)))) # "M"

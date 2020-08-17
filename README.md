@@ -1,8 +1,11 @@
 # **C**ell **C**ell **SIG**naling
 
-![graph](assets/graph.svg)
-
-Command line scripts to perform intracellular signaling analysis.
+<!-- ![graph](assets/graph.svg) -->
+<p align="center">
+  <img width="460" height="300" src="assets/graph.svg">
+  <br>
+  <b>Intracellular signaling analysis in python</b><br>
+</p>
 
 
 ## Installation

@@ -267,8 +267,8 @@ if __name__ == '__main__':
 
   parser.add_argument('receptors_fname', default=None, type=str)
   parser.add_argument('output_dir', default=None, type=str)
-  parser.add_argument('--weighted_lr_sig', default='weighted_lr_sig.csv', type=str)
-  parser.add_argument('--weighted_gr', default='weighted_gr.csv', type=str)
+  parser.add_argument('--weighted_lr_sig', default='../data/nichenet_weighted_lr_sig.csv', type=str)
+  parser.add_argument('--weighted_gr', default='../data/nichenet_weighted_gr.csv', type=str)
   parser.add_argument('--n_sig_partners', default=5, type=int)
   parser.add_argument('--steps', default=2, type=int)
 

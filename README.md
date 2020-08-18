@@ -1,10 +1,10 @@
-# **C**ell **C**ell **SIG**naling
+<!-- # **C**ell **C**ell **SIG**naling -->
 
 <!-- ![graph](assets/graph.svg) -->
 <p align="center">
   <img width="460" height="300" src="assets/graph.svg">
   <br>
-  <b>Intracellular signaling analysis in python</b><br>
+  <b>Cell-Cell signaling analysis in python</b><br>
 </p>
 
 

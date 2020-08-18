@@ -12,15 +12,15 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="191.28709pt"
-   height="172.63885pt"
-   viewBox="0 0 191.50458 172.63885"
+   width="76.516159pt"
+   height="70.605232pt"
+   viewBox="0 0 76.516159 70.570791"
    version="1.1"
-   id="svg1202"
+   id="svg446"
    sodipodi:docname="graph.svg"
    inkscape:version="0.92.5 (0.92.5+69)">
   <metadata
-     id="metadata1208">
+     id="metadata452">
     <rdf:RDF>
       <cc:Work
          rdf:about="">
@@ -32,7 +32,7 @@
     </rdf:RDF>
   </metadata>
   <defs
-     id="defs1206" />
+     id="defs450" />
   <sodipodi:namedview
      pagecolor="#ffffff"
      bordercolor="#666666"
@@ -42,700 +42,307 @@
      guidetolerance="10"
      inkscape:pageopacity="0"
      inkscape:pageshadow="2"
-     inkscape:window-width="1747"
-     inkscape:window-height="1294"
-     id="namedview1204"
+     inkscape:window-width="1871"
+     inkscape:window-height="1061"
+     id="namedview448"
      showgrid="false"
-     inkscape:zoom="2.1396562"
-     inkscape:cx="112.41565"
-     inkscape:cy="67.68716"
-     inkscape:window-x="417"
-     inkscape:window-y="1506"
-     inkscape:window-maximized="0"
-     inkscape:current-layer="svg1202"
      fit-margin-top="0"
      fit-margin-left="0"
      fit-margin-right="0"
-     fit-margin-bottom="0" />
-  <polygon
-     points=""
-     id="polygon337"
-     style="fill:#ffffff;stroke:#ffffff;stroke-width:0"
-     transform="matrix(0.186786,0,0,0.186786,147.69878,320.3427)" />
-  <polygon
-     points=""
-     id="polygon491"
-     style="fill:#ffffff;stroke:#ffffff;stroke-width:0"
-     transform="matrix(0.186786,0,0,0.186786,147.69878,320.3427)" />
-  <polygon
-     points=""
-     id="polygon1037"
-     style="fill:#ffffff;stroke:#ffffff;stroke-width:0"
-     transform="matrix(0.186786,0,0,0.186786,147.69878,320.3427)" />
-  <polygon
-     points=""
-     id="polygon1163"
-     style="fill:#ffffff;stroke:#ffffff;stroke-width:0"
-     transform="matrix(0.186786,0,0,0.186786,147.69878,320.3427)" />
+     fit-margin-bottom="0"
+     inkscape:zoom="5.2280327"
+     inkscape:cx="27.284604"
+     inkscape:cy="42.880909"
+     inkscape:window-x="536"
+     inkscape:window-y="1595"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="svg446" />
+  <circle
+     cx="24.065874"
+     cy="61.690723"
+     id="ellipse138"
+     r="6.8935232"
+     style="fill:#ff7f0e;stroke:#000000;stroke-width:0" />
+  <circle
+     cx="55.682941"
+     cy="61.525173"
+     id="ellipse149"
+     r="9.0600586"
+     style="fill:#1f77b4;stroke:#000000;stroke-width:0" />
+  <circle
+     cx="71.592209"
+     cy="32.222847"
+     id="ellipse160"
+     r="4.923945"
+     style="fill:#9467bd;stroke:#000000;stroke-width:0" />
+  <circle
+     cx="54.512012"
+     cy="5.6165371"
+     id="ellipse171"
+     r="5.0224237"
+     style="fill:#c5b0d5;stroke:#000000;stroke-width:0" />
+  <circle
+     cx="7.829073"
+     cy="34.560951"
+     id="ellipse180"
+     r="7.8290725"
+     style="fill:#2ca02c;stroke:#000000;stroke-width:0" />
+  <circle
+     cx="22.915545"
+     cy="6.7750435"
+     id="ellipse189"
+     r="6.7950439"
+     style="fill:#aec7e8;stroke:#000000;stroke-width:0" />
   <g
-     id="g3978"
-     transform="translate(-0.74714515,-0.99273418)">
-    <circle
-       style="fill:#ff7f0e;stroke:#000000;stroke-width:0"
-       r="13.07502"
-       id="ellipse138"
-       cy="158.2563"
-       cx="59.148773" />
-    <circle
-       style="fill:#1f77b4;stroke:#000000;stroke-width:0"
-       r="17.184313"
-       id="ellipse149"
-       cy="156.39798"
-       cx="142.8055" />
-    <circle
-       style="fill:#9467bd;stroke:#000000;stroke-width:0"
-       r="9.3393002"
-       id="ellipse160"
-       cy="82.529526"
-       cx="182.91243" />
-    <circle
-       style="fill:#c5b0d5;stroke:#000000;stroke-width:0"
-       r="9.5260859"
-       id="ellipse171"
-       cy="11.356585"
-       cx="138.90842" />
-    <circle
-       style="fill:#2ca02c;stroke:#000000;stroke-width:0"
-       r="14.849487"
-       id="ellipse180"
-       cy="87.008652"
-       cx="15.596633" />
-    <circle
-       style="fill:#aec7e8;stroke:#000000;stroke-width:0"
-       r="12.888234"
-       id="ellipse189"
-       cy="13.635387"
-       cx="55.434723" />
-    <g
-       transform="matrix(0.186786,0,0,0.186786,148.44593,321.33543)"
-       id="edge108"
-       class="edge">
-      <title
-         id="title851">Tfh_CD4T
+     class="edge"
+     id="edge25"
+     transform="matrix(0.0984789,0,0,0.0984789,-66.924291,33.731869)">
+    <title
+       id="title347">Tfh_CD4T
+R-&gt;Activated_Bcell
+R</title>
+    <path
+       style="fill:none;stroke:#2171b5;stroke-width:5"
+       inkscape:connector-curvature="0"
+       id="path349"
+       d="M 983.617,246.915 C 1068.48,194.299 1224.48,97.5752 1321.46,37.4458" />
+    <polygon
+       style="fill:#2171b5;stroke:#2171b5;stroke-width:5"
+       id="polygon351"
+       points="1364.05,11.0387 1333.08,55.9779 1310.03,18.7951 " />
+  </g>
+  <g
+     class="edge"
+     id="edge28"
+     transform="matrix(0.0984789,0,0,0.0984789,-66.924291,33.731869)">
+    <title
+       id="title354">Tfh_CD4T
+R-&gt;Plasma_Bcell_IgG
+R</title>
+    <path
+       style="fill:none;stroke:#c7dbef;stroke-width:2"
+       inkscape:connector-curvature="0"
+       id="path356"
+       d="m 957.482,222.158 c 59.688,-109.924 183.638,-338.212 242.808,-447.2" />
+    <polygon
+       style="fill:#c7dbef;stroke:#c7dbef;stroke-width:2"
+       id="polygon358"
+       points="1208.71,-240.54 1205.74,-222.238 1194.97,-228.083 " />
+  </g>
+  <g
+     class="edge"
+     id="edge27"
+     transform="matrix(0.0984789,0,0,0.0984789,-66.924291,33.731869)">
+    <title
+       id="title361">Tfh_CD4T
+R-&gt;FCGR1_Mac
+R</title>
+    <path
+       style="fill:none;stroke:#fb6b4b;stroke-width:3"
+       inkscape:connector-curvature="0"
+       id="path363"
+       d="M 878.656,230.291 C 856.142,196.863 829.121,152.778 806.367,112.701" />
+    <polygon
+       style="fill:#fb6b4b;stroke:#fb6b4b;stroke-width:3"
+       id="polygon365"
+       points="789.389,82.0459 817.063,106.728 795.63,118.599 " />
+  </g>
+  <g
+     class="edge"
+     id="edge26"
+     transform="matrix(0.0984789,0,0,0.0984789,-66.924291,33.731869)">
+    <title
+       id="title368">Tfh_CD4T
+R-&gt;Late_Activation_CD8T
+R</title>
+    <path
+       style="fill:none;stroke:#cb181d;stroke-width:5"
+       inkscape:connector-curvature="0"
+       id="path370"
+       d="m 922.488,213.846 c -1.932,-92.258 -5.359,-255.8672 -7.707,-367.916" />
+    <polygon
+       style="fill:#cb181d;stroke:#cb181d;stroke-width:5"
+       id="polygon372"
+       points="913.727,-204.395 936.645,-154.864 892.904,-153.948 " />
+  </g>
+  <g
+     class="edge"
+     id="edge24"
+     transform="matrix(0.0984789,0,0,0.0984789,-66.924291,33.731869)">
+    <title
+       id="title375">Trm_CD8T
+R-&gt;Activated_Bcell
+R</title>
+    <path
+       style="fill:none;stroke:#2171b5;stroke-width:5"
+       inkscape:connector-curvature="0"
+       id="path377"
+       d="m 1288.94,201.312 c 21.58,-39.734 47.61,-87.688 69.7,-128.3675" />
+    <polygon
+       style="fill:#2171b5;stroke:#2171b5;stroke-width:5"
+       id="polygon379"
+       points="1382.65,28.7193 1378.02,83.098 1339.57,62.2223 " />
+  </g>
+  <g
+     class="edge"
+     id="edge22"
+     transform="matrix(0.0984789,0,0,0.0984789,-66.924291,33.731869)">
+    <title
+       id="title382">Trm_CD8T
+R-&gt;FCGR1_Mac
+R</title>
+    <path
+       style="fill:none;stroke:#fb6b4b;stroke-width:3"
+       inkscape:connector-curvature="0"
+       id="path384"
+       d="M 1162.23,241.513 C 1077.54,196.043 946.017,122.095 856.393,69.6581" />
+    <polygon
+       style="fill:#fb6b4b;stroke:#fb6b4b;stroke-width:3"
+       id="polygon386"
+       points="826.009,51.7478 862.381,58.9681 849.94,80.0741 " />
+  </g>
+  <g
+     class="edge"
+     id="edge23"
+     transform="matrix(0.0984789,0,0,0.0984789,-66.924291,33.731869)">
+    <title
+       id="title389">Trm_CD8T
+R-&gt;Late_Activation_CD8T
+R</title>
+    <path
+       style="fill:none;stroke:#cb181d;stroke-width:5"
+       inkscape:connector-curvature="0"
+       id="path391"
+       d="m 1197.69,203.161 c -58.9,-98.409 -159.6,-266.6635 -224.283,-374.749" />
+    <polygon
+       style="fill:#cb181d;stroke:#cb181d;stroke-width:5"
+       id="polygon393"
+       points="947.711,-214.523 992.158,-182.853 954.618,-160.386 " />
+  </g>
+  <g
+     class="edge"
+     id="edge29"
+     transform="matrix(0.0984789,0,0,0.0984789,-66.924291,33.731869)">
+    <title
+       id="title396">Activated_Bcell
+R-&gt;Plasma_Bcell_IgG
+R</title>
+    <path
+       style="fill:none;stroke:#000000;stroke-width:3;stroke-dasharray:1, 5"
+       inkscape:connector-curvature="0"
+       id="path398"
+       d="M 1379.46,-57.5379 C 1350.13,-103.231 1303.16,-176.4 1270.36,-227.478" />
+    <polygon
+       style="fill:#000000;stroke:#000000;stroke-width:3"
+       id="polygon400"
+       points="1260.89,-242.238 1275.5,-230.821 1265.19,-224.203 " />
+  </g>
+  <g
+     class="edge"
+     id="edge30"
+     transform="matrix(0.0984789,0,0,0.0984789,-66.619971,33.630429)">
+    <title
+       id="title403">Plasma_Bcell_IgG
+R-&gt;FCGR1_Mac
+R</title>
+    <path
+       style="fill:none;stroke:#2171b5;stroke-width:5"
+       inkscape:connector-curvature="0"
+       id="path405"
+       d="m 1189.37,-258.372 c -72.11,44.712 -218.086,135.218 -319.911,198.3525" />
+    <polygon
+       style="fill:#2171b5;stroke:#2171b5;stroke-width:5"
+       id="polygon407"
+       points="857.839,-78.5532 880.893,-41.3703 826.872,-33.6139 " />
+  </g>
+  <g
+     class="edge"
+     id="edge31"
+     transform="matrix(0.0984789,0,0,0.0984789,-66.924291,33.731869)">
+    <title
+       id="title410">Plasma_Bcell_IgG
+R-&gt;Late_Activation_CD8T
+R</title>
+    <path
+       style="fill:none;stroke:#cb181d;stroke-width:5"
+       inkscape:connector-curvature="0"
+       id="path412"
+       d="m 1181.92,-283.619 c -40.35,1.479 -98.26,3.603 -150.08,5.503" />
+    <polygon
+       style="fill:#cb181d;stroke:#cb181d;stroke-width:5"
+       id="polygon414"
+       points="981.516,-276.271 1030.68,-299.963 1032.28,-256.243 " />
+  </g>
+  <g
+     class="edge"
+     id="edge33"
+     transform="matrix(0.0984789,0,0,0.0984789,-66.924291,33.731869)">
+    <title
+       id="title417">FCGR1_Mac
 R-&gt;Tfh_CD4T
 R</title>
-      <path
-         d="m -408.001,-879.235 c 10.678,0.94 17.929,2.991 17.929,6.155 0,3.115 -7.026,5.152 -17.431,6.111"
-         id="path853"
-         inkscape:connector-curvature="0"
-         style="fill:none;stroke:#ffffff;stroke-width:0" />
-      <polygon
-         points=""
-         id="polygon855"
-         style="fill:#ffffff;stroke:#ffffff;stroke-width:0" />
-    </g>
-    <g
-       transform="matrix(0.186786,0,0,0.186786,148.44593,321.33543)"
-       id="edge109"
-       class="edge">
-      <title
-         id="title858">Tfh_CD4T
+    <path
+       style="fill:none;stroke:#cb181d;stroke-width:5"
+       inkscape:connector-curvature="0"
+       id="path419"
+       d="m 809.76,70.0973 c 20.382,30.8007 43.72,68.9587 64.037,104.4887" />
+    <polygon
+       style="fill:#cb181d;stroke:#cb181d;stroke-width:5"
+       id="polygon421"
+       points="898.064,218.561 854.754,185.353 893.059,164.215 " />
+  </g>
+  <g
+     class="edge"
+     id="edge34"
+     transform="matrix(0.0984789,0,0,0.0984789,-66.924291,33.731869)">
+    <title
+       id="title424">FCGR1_Mac
+R-&gt;Tfh_CD4T
+R</title>
+    <path
+       style="fill:none;stroke:#6caed6;stroke-width:3"
+       inkscape:connector-curvature="0"
+       id="path426"
+       d="m 800.047,76.871 c 21.086,35.232 47.067,78.642 69.783,116.598" />
+    <polygon
+       style="fill:#6caed6;stroke:#6caed6;stroke-width:3"
+       id="polygon428"
+       points="887.964,223.77 859.479,200.028 880.502,187.446 " />
+  </g>
+  <g
+     class="edge"
+     id="edge35"
+     transform="matrix(0.0984789,0,0,0.0984789,-66.924291,33.731869)">
+    <title
+       id="title431">FCGR1_Mac
 R-&gt;Trm_CD8T
 R</title>
-      <path
-         d="m -408.204,-879.695 c 76.81,-3.766 200.553,-6.69 285.399,-6.865"
-         id="path860"
-         inkscape:connector-curvature="0"
-         style="fill:none;stroke:#ffffff;stroke-width:0" />
-      <polygon
-         points=""
-         id="polygon862"
-         style="fill:#ffffff;stroke:#ffffff;stroke-width:0" />
-    </g>
     <path
-       style="fill:none;stroke:#2171b5;stroke-width:5.04322195"
+       style="fill:none;stroke:#fb6b4b;stroke-width:3"
        inkscape:connector-curvature="0"
-       id="path867"
-       d="M 69.448527,150.17464 C 86.923665,138.28029 123.05686,115.89138 149.88036,100.11917" />
+       id="path433"
+       d="M 830.846,43.2398 C 911.675,86.3311 1043.87,160.486 1137.14,214.825" />
     <polygon
-       transform="matrix(0.186786,0,0,0.186786,148.44593,321.33543)"
-       style="fill:#2171b5;stroke:#2171b5;stroke-width:1.11751986;stroke-miterlimit:4;stroke-dasharray:none"
-       id="polygon869"
-       points="138.289,-1258.48 -25.4813,-1243.13 66.6476,-1232.76 1.42435,-1195.73 7.84221,-1184.42 14.2601,-1173.12 79.4833,-1210.15 41.1657,-1125.72 " />
-    <g
-       transform="matrix(0.186786,0,0,0.186786,148.44593,321.33543)"
-       id="edge110"
-       class="edge">
-      <title
-         id="title872">Tfh_CD4T
-R-&gt;Activated_Bcell
-R</title>
-      <path
-         d="m -414.446,-902.482 c 135.608,-74.183 449.3674,-266.568 559.774,-343.738"
-         id="path874"
-         inkscape:connector-curvature="0"
-         style="fill:none;stroke:#ffffff;stroke-width:0" />
-      <polygon
-         points=""
-         id="polygon876"
-         style="fill:#ffffff;stroke:#ffffff;stroke-width:0" />
-    </g>
-    <path
-       style="fill:none;stroke:#c7dbef;stroke-width:2.24143195"
-       inkscape:connector-curvature="0"
-       id="path881"
-       d="M 64.115226,146.10719 C 76.500259,120.5274 108.68517,61.000575 126.56339,30.343388" />
-    <polygon
-       transform="matrix(0.186786,0,0,0.186786,148.44593,321.33543)"
-       style="fill:#c7dbef;stroke:#c7dbef;stroke-width:1.11751986;stroke-miterlimit:4;stroke-dasharray:none"
-       id="polygon883"
-       points="-81.2204,-1618.01 -144.173,-1574.08 -103.899,-1590.79 -121.856,-1560.74 -117.135,-1557.92 -112.414,-1555.1 -94.4566,-1585.14 -90.0966,-1541.76 " />
-    <path
-       style="fill:none;stroke:#fb6b4b;stroke-width:3.36214805"
-       inkscape:connector-curvature="0"
-       id="path895"
-       d="m 49.396676,149.45944 c -6.473068,-8.35532 -14.84874,-21.31303 -21.70528,-33.27481" />
-    <polygon
-       transform="matrix(0.186786,0,0,0.186786,148.44593,321.33543)"
-       style="fill:#fb6b4b;stroke:#fb6b4b;stroke-width:1.11751986;stroke-miterlimit:4;stroke-dasharray:none"
-       id="polygon897"
-       points="-688.99,-1177.9 -682.312,-1079.43 -675.287,-1134.2 -654.086,-1094.51 -646.588,-1098.51 -639.091,-1102.52 -660.292,-1142.21 -610.865,-1117.59 " />
-    <g
-       transform="matrix(0.186786,0,0,0.186786,148.44593,321.33543)"
-       id="edge112"
-       class="edge">
-      <title
-         id="title900">Tfh_CD4T
-R-&gt;FCGR1_Mac
-R</title>
-      <path
-         d="m -496.181,-941.021 c -34.609,-73.859 -105.133,-189.899 -156.705,-258.359"
-         id="path902"
-         inkscape:connector-curvature="0"
-         style="fill:none;stroke:#ffffff;stroke-width:0" />
-      <polygon
-         points=""
-         id="polygon904"
-         style="fill:#ffffff;stroke:#ffffff;stroke-width:0" />
-    </g>
-    <path
-       style="fill:none;stroke:#cb181d;stroke-width:5.04322195"
-       inkscape:connector-curvature="0"
-       id="path909"
-       d="M 57.293615,145.2702 C 55.790361,125.03829 54.507328,85.144533 54.188484,54.552722" />
-    <polygon
-       transform="matrix(0.186786,0,0,0.186786,148.44593,321.33543)"
-       style="fill:#cb181d;stroke:#cb181d;stroke-width:1.11751986;stroke-miterlimit:4;stroke-dasharray:none"
-       id="polygon911"
-       points="-504.28,-1578.53 -572.128,-1428.68 -517.454,-1503.56 -517.628,-1428.56 -504.628,-1428.53 -491.628,-1428.5 -491.454,-1503.5 -437.128,-1428.37 " />
-    <g
-       transform="matrix(0.186786,0,0,0.186786,148.44593,321.33543)"
-       id="edge113"
-       class="edge">
-      <title
-         id="title914">Tfh_CD4T
+       style="fill:#fb6b4b;stroke:#fb6b4b;stroke-width:3"
+       id="polygon435"
+       points="1167.45,232.599 1131.06,225.462 1143.46,204.327 " />
+  </g>
+  <g
+     class="edge"
+     id="edge32"
+     transform="matrix(0.0984789,0,0,0.0984789,-66.924291,33.731869)">
+    <title
+       id="title438">FCGR1_Mac
 R-&gt;Late_Activation_CD8T
 R</title>
-      <path
-         d="m -471.722,-943.022 c 3.367,-147.518 -5.413,-488.958 -16.354,-635.488"
-         id="path916"
-         inkscape:connector-curvature="0"
-         style="fill:none;stroke:#ffffff;stroke-width:0" />
-      <polygon
-         points=""
-         id="polygon918"
-         style="fill:#ffffff;stroke:#ffffff;stroke-width:0" />
-    </g>
-    <g
-       transform="matrix(0.186786,0,0,0.186786,148.44593,321.33543)"
-       id="edge114"
-       class="edge">
-      <title
-         id="title921">Trm_CD8T
-R-&gt;Tfh_CD4T
-R</title>
-      <path
-         d="m -122.059,-875.411 c -84.66,3.6 -208.507,6.183 -285.583,5.84"
-         id="path923"
-         inkscape:connector-curvature="0"
-         style="fill:none;stroke:#ffffff;stroke-width:0" />
-      <polygon
-         points=""
-         id="polygon925"
-         style="fill:#ffffff;stroke:#ffffff;stroke-width:0" />
-    </g>
     <path
-       style="fill:none;stroke:#2171b5;stroke-width:5.04322195"
+       style="fill:none;stroke:#fcbca2;stroke-width:2"
        inkscape:connector-curvature="0"
-       id="path937"
-       d="m 149.14482,140.36968 c 3.7899,-7.71426 8.79819,-17.23848 13.80011,-26.31815" />
+       id="path440"
+       d="M 797.145,-61.6887 C 819.589,-103.025 848,-155.352 870.983,-197.682" />
     <polygon
-       transform="matrix(0.186786,0,0,0.186786,148.44593,321.33543)"
-       style="fill:#2171b5;stroke:#2171b5;stroke-width:1.11751986;stroke-miterlimit:4;stroke-dasharray:none"
-       id="polygon939"
-       points="153.201,-1239.31 19.3186,-1143.75 104.183,-1181.08 66.3957,-1116.29 77.6251,-1109.74 88.8545,-1103.19 126.642,-1167.98 135.932,-1075.73 " />
-    <g
-       transform="matrix(0.186786,0,0,0.186786,148.44593,321.33543)"
-       id="edge116"
-       class="edge">
-      <title
-         id="title942">Trm_CD8T
-R-&gt;Activated_Bcell
-R</title>
-      <path
-         d="M 23.2856,-958.229 C 71.1126,-1038.35 137.755,-1162.66 168.54,-1230.49"
-         id="path944"
-         inkscape:connector-curvature="0"
-         style="fill:none;stroke:#ffffff;stroke-width:0" />
-      <polygon
-         points=""
-         id="polygon946"
-         style="fill:#ffffff;stroke:#ffffff;stroke-width:0" />
-    </g>
-    <g
-       transform="matrix(0.186786,0,0,0.186786,148.44593,321.33543)"
-       id="edge117"
-       class="edge">
-      <title
-         id="title949">Trm_CD8T
-R-&gt;Plasma_Bcell_IgG
-R</title>
-      <path
-         d="M -37.2255,-975.032 C -44.8697,-1139.5 -53.6589,-1478.78 -53.2521,-1608.01"
-         id="path951"
-         inkscape:connector-curvature="0"
-         style="fill:none;stroke:#ffffff;stroke-width:0" />
-      <polygon
-         points=""
-         id="polygon953"
-         style="fill:#ffffff;stroke:#ffffff;stroke-width:0" />
-    </g>
-    <path
-       style="fill:none;stroke:#fb6b4b;stroke-width:3.36214805"
-       inkscape:connector-curvature="0"
-       id="path958"
-       d="M 126.62092,150.46715 C 105.2158,140.38481 67.272097,119.93156 41.770017,104.91396" />
-    <polygon
-       transform="matrix(0.186786,0,0,0.186786,148.44593,321.33543)"
-       style="fill:#fb6b4b;stroke:#fb6b4b;stroke-width:1.11751986;stroke-miterlimit:4;stroke-dasharray:none"
-       id="polygon960"
-       points="-648.308,-1205.58 -592.438,-1124.23 -614.27,-1174.94 -575.816,-1151.57 -571.401,-1158.83 -566.986,-1166.1 -605.44,-1189.47 -550.365,-1193.44 " />
-    <g
-       transform="matrix(0.186786,0,0,0.186786,148.44593,321.33543)"
-       id="edge118"
-       class="edge">
-      <title
-         id="title963">Trm_CD8T
-R-&gt;FCGR1_Mac
-R</title>
-      <path
-         d="m -103.803,-938.692 c -130.36,-81.458 -400.062,-228.288 -531.833,-289.238"
-         id="path965"
-         inkscape:connector-curvature="0"
-         style="fill:none;stroke:#ffffff;stroke-width:0" />
-      <polygon
-         points=""
-         id="polygon967"
-         style="fill:#ffffff;stroke:#ffffff;stroke-width:0" />
-    </g>
-    <path
-       style="fill:none;stroke:#cb181d;stroke-width:5.04322195"
-       inkscape:connector-curvature="0"
-       id="path972"
-       d="M 132.49848,142.62774 C 118.34369,121.36421 92.71235,79.865961 74.900063,49.660797" />
-    <polygon
-       transform="matrix(0.186786,0,0,0.186786,148.44593,321.33543)"
-       style="fill:#cb181d;stroke:#cb181d;stroke-width:1.11751986;stroke-miterlimit:4;stroke-dasharray:none"
-       id="polygon974"
-       points="-468.532,-1584.67 -452.348,-1420.98 -442.447,-1513.16 -405.09,-1448.12 -393.817,-1454.6 -382.545,-1461.08 -419.902,-1526.11 -335.286,-1488.22 " />
-    <g
-       transform="matrix(0.186786,0,0,0.186786,148.44593,321.33543)"
-       id="edge119"
-       class="edge">
-      <title
-         id="title977">Trm_CD8T
-R-&gt;Late_Activation_CD8T
-R</title>
-      <path
-         d="M -70.7368,-965.712 C -158.749,-1122.66 -365.363,-1459.66 -455.276,-1592.23"
-         id="path979"
-         inkscape:connector-curvature="0"
-         style="fill:none;stroke:#ffffff;stroke-width:0" />
-      <polygon
-         points=""
-         id="polygon981"
-         style="fill:#ffffff;stroke:#ffffff;stroke-width:0" />
-    </g>
-    <g
-       transform="matrix(0.186786,0,0,0.186786,148.44593,321.33543)"
-       id="edge120"
-       class="edge">
-      <title
-         id="title984">Activated_Bcell
-R-&gt;Tfh_CD4T
-R</title>
-      <path
-         d="m 141.814,-1252.36 c -114.2256,69.89 -427.037,261.283 -559.427,342.288"
-         id="path986"
-         inkscape:connector-curvature="0"
-         style="fill:none;stroke:#ffffff;stroke-width:0" />
-      <polygon
-         points=""
-         id="polygon988"
-         style="fill:#ffffff;stroke:#ffffff;stroke-width:0" />
-    </g>
-    <g
-       transform="matrix(0.186786,0,0,0.186786,148.44593,321.33543)"
-       id="edge121"
-       class="edge">
-      <title
-         id="title991">Activated_Bcell
-R-&gt;Trm_CD8T
-R</title>
-      <path
-         d="m 160.518,-1234.28 c -35.388,65.17 -102.1495,188.13 -146.5394,269.889"
-         id="path993"
-         inkscape:connector-curvature="0"
-         style="fill:none;stroke:#ffffff;stroke-width:0" />
-      <polygon
-         points=""
-         id="polygon995"
-         style="fill:#ffffff;stroke:#ffffff;stroke-width:0" />
-    </g>
-    <g
-       transform="matrix(0.186786,0,0,0.186786,148.44593,321.33543)"
-       id="edge101"
-       class="edge">
-      <title
-         id="title1005">Activated_Bcell
-R-&gt;Plasma_Bcell_IgG
-R</title>
-      <path
-         d="m 151.125,-1315.72 c -48.521,-67.14 -136.1802,-208.45 -178.6006,-287.47"
-         id="path1007"
-         inkscape:connector-curvature="0"
-         style="fill:none;stroke:#000000;stroke-width:18;stroke-dasharray:1, 5" />
-      <polygon
-         points="-41.3965,-1595.82 -32.1738,-1612.04 -13.5735,-1610.59 "
-         id="polygon1009"
-         style="fill:#000000;stroke:#000000;stroke-width:18" />
-    </g>
-    <g
-       transform="matrix(0.186786,0,0,0.186786,148.44593,321.33543)"
-       id="edge123"
-       class="edge">
-      <title
-         id="title1012">Activated_Bcell
-R-&gt;Plasma_Bcell_IgG
-R</title>
-      <path
-         d="M 166.153,-1325.01 C 126.377,-1401.1 34.102,-1550.42 -16.7129,-1621"
-         id="path1014"
-         inkscape:connector-curvature="0"
-         style="fill:none;stroke:#ffffff;stroke-width:0" />
-      <polygon
-         points=""
-         id="polygon1016"
-         style="fill:#ffffff;stroke:#ffffff;stroke-width:0" />
-    </g>
-    <g
-       transform="matrix(0.186786,0,0,0.186786,148.44593,321.33543)"
-       id="edge124"
-       class="edge">
-      <title
-         id="title1019">Activated_Bcell
-R-&gt;FCGR1_Mac
-R</title>
-      <path
-         d="m 134.534,-1273.84 c -148.0183,8.28 -584.976,20.22 -765.914,21.24"
-         id="path1021"
-         inkscape:connector-curvature="0"
-         style="fill:none;stroke:#ffffff;stroke-width:0" />
-      <polygon
-         points=""
-         id="polygon1023"
-         style="fill:#ffffff;stroke:#ffffff;stroke-width:0" />
-    </g>
-    <g
-       transform="matrix(0.186786,0,0,0.186786,148.44593,321.33543)"
-       id="edge125"
-       class="edge">
-      <title
-         id="title1026">Activated_Bcell
-R-&gt;Late_Activation_CD8T
-R</title>
-      <path
-         d="m 138.853,-1299.16 c -119.9743,-60.18 -443.907,-235.04 -577.74,-311.64"
-         id="path1028"
-         inkscape:connector-curvature="0"
-         style="fill:none;stroke:#ffffff;stroke-width:0" />
-      <polygon
-         points=""
-         id="polygon1030"
-         style="fill:#ffffff;stroke:#ffffff;stroke-width:0" />
-    </g>
-    <g
-       transform="matrix(0.186786,0,0,0.186786,148.44593,321.33543)"
-       id="edge128"
-       class="edge">
-      <title
-         id="title1047">Plasma_Bcell_IgG
-R-&gt;Activated_Bcell
-R</title>
-      <path
-         d="m -24.0365,-1615.83 c 45.4755,73.56 136.7485,221.18 181.9465,294.29"
-         id="path1049"
-         inkscape:connector-curvature="0"
-         style="fill:none;stroke:#ffffff;stroke-width:0" />
-      <polygon
-         points=""
-         id="polygon1051"
-         style="fill:#ffffff;stroke:#ffffff;stroke-width:0" />
-    </g>
-    <path
-       style="fill:none;stroke:#2171b5;stroke-width:5.04322195"
-       inkscape:connector-curvature="0"
-       id="path1063"
-       d="M 131.51296,17.455154 C 116.38505,28.045921 81.049058,50.112819 53.336367,66.583608" />
-    <polygon
-       transform="matrix(0.186786,0,0,0.186786,148.44593,321.33543)"
-       style="fill:#2171b5;stroke:#2171b5;stroke-width:1.11751986;stroke-miterlimit:4;stroke-dasharray:none"
-       id="polygon1065"
-       points="-639.251,-1288.62 -475.613,-1305.31 -567.824,-1314.93 -502.907,-1352.49 -509.417,-1363.74 -515.928,-1374.99 -580.845,-1337.43 -543.222,-1422.16 " />
-    <g
-       transform="matrix(0.186786,0,0,0.186786,148.44593,321.33543)"
-       id="edge130"
-       class="edge">
-      <title
-         id="title1068">Plasma_Bcell_IgG
-R-&gt;FCGR1_Mac
-R</title>
-      <path
-         d="m -97.8359,-1639.17 c -116.2281,61.92 -417.8171,246.36 -549.9321,335.62"
-         id="path1070"
-         inkscape:connector-curvature="0"
-         style="fill:none;stroke:#ffffff;stroke-width:0" />
-      <polygon
-         points=""
-         id="polygon1072"
-         style="fill:#ffffff;stroke:#ffffff;stroke-width:0" />
-    </g>
-    <path
-       style="fill:none;stroke:#cb181d;stroke-width:5.04322195"
-       inkscape:connector-curvature="0"
-       id="path1077"
-       d="m 129.54076,13.280487 c -8.2212,0.808784 -20.77845,1.436385 -33.233153,1.761392" />
-    <polygon
-       transform="matrix(0.186786,0,0,0.186786,148.44593,321.33543)"
-       style="fill:#cb181d;stroke:#cb181d;stroke-width:1.11751986;stroke-miterlimit:4;stroke-dasharray:none"
-       id="polygon1079"
-       points="-429.261,-1639.16 -278.971,-1572.31 -354.205,-1626.48 -279.206,-1626.81 -279.262,-1639.81 -279.318,-1652.81 -354.318,-1652.48 -279.554,-1707.31 " />
-    <path
-       style="fill:none;stroke:#cb181d;stroke-width:5.04322195"
-       inkscape:connector-curvature="0"
-       id="path1091"
-       d="m 24.969177,98.552032 c 4.388537,6.464668 9.764985,14.911128 14.948483,23.409888" />
-    <polygon
-       transform="matrix(0.186786,0,0,0.186786,148.44593,321.33543)"
-       style="fill:#cb181d;stroke:#cb181d;stroke-width:1.11751986;stroke-miterlimit:4;stroke-dasharray:none"
-       id="polygon1093"
-       points="-505.605,-937.478 -522.544,-1101.09 -532.019,-1008.87 -569.676,-1073.73 -580.919,-1067.2 -592.161,-1060.67 -554.504,-995.811 -639.294,-1033.31 " />
-    <path
-       style="fill:none;stroke:#6caed6;stroke-width:3.36214805"
-       inkscape:connector-curvature="0"
-       id="path1098"
-       d="m 23.38299,99.745595 c 5.595922,9.154385 13.329423,21.807265 20.174009,33.003215" />
-    <polygon
-       transform="matrix(0.186786,0,0,0.186786,148.44593,321.33543)"
-       style="fill:#6caed6;stroke:#6caed6;stroke-width:1.11751986;stroke-miterlimit:4;stroke-dasharray:none"
-       id="polygon1100"
-       points="-514.605,-932.845 -526.99,-1030.76 -530.823,-975.673 -554.293,-1014.07 -561.545,-1009.63 -568.797,-1005.2 -545.328,-966.807 -596.1,-988.512 " />
-    <g
-       transform="matrix(0.186786,0,0,0.186786,148.44593,321.33543)"
-       id="edge132"
-       class="edge">
-      <title
-         id="title1103">FCGR1_Mac
-R-&gt;Tfh_CD4T
-R</title>
-      <path
-         d="m -679.119,-1181.69 c 40.658,74.26 110.132,187.618 156.018,254.352"
-         id="path1105"
-         inkscape:connector-curvature="0"
-         style="fill:none;stroke:#ffffff;stroke-width:0" />
-      <polygon
-         points=""
-         id="polygon1107"
-         style="fill:#ffffff;stroke:#ffffff;stroke-width:0" />
-    </g>
-    <path
-       style="fill:none;stroke:#fb6b4b;stroke-width:3.36214805"
-       inkscape:connector-curvature="0"
-       id="path1112"
-       d="M 29.056241,93.435964 C 49.003118,103.75402 86.903118,124.32103 113.45512,139.14904" />
-    <polygon
-       transform="matrix(0.186786,0,0,0.186786,148.44593,321.33543)"
-       style="fill:#fb6b4b;stroke:#fb6b4b;stroke-width:1.11751986;stroke-miterlimit:4;stroke-dasharray:none"
-       id="polygon1114"
-       points="-108.781,-931.082 -167.283,-1010.57 -143.803,-960.589 -183.001,-982.692 -187.176,-975.288 -191.351,-967.884 -152.153,-945.781 -207.069,-940.01 " />
-    <g
-       transform="matrix(0.186786,0,0,0.186786,148.44593,321.33543)"
-       id="edge133"
-       class="edge">
-      <title
-         id="title1117">FCGR1_Mac
-R-&gt;Trm_CD8T
-R</title>
-      <path
-         d="m -643.296,-1212.56 c 125.557,72.1 393.46,218.34 529.755,289.266"
-         id="path1119"
-         inkscape:connector-curvature="0"
-         style="fill:none;stroke:#ffffff;stroke-width:0" />
-      <polygon
-         points=""
-         id="polygon1121"
-         style="fill:#ffffff;stroke:#ffffff;stroke-width:0" />
-    </g>
-    <g
-       transform="matrix(0.186786,0,0,0.186786,148.44593,321.33543)"
-       id="edge134"
-       class="edge">
-      <title
-         id="title1124">FCGR1_Mac
-R-&gt;Activated_Bcell
-R</title>
-      <path
-         d="m -631.853,-1260.69 c 180.412,-8.66 617.0954,-20.11 765.804,-19.79"
-         id="path1126"
-         inkscape:connector-curvature="0"
-         style="fill:none;stroke:#ffffff;stroke-width:0" />
-      <polygon
-         points=""
-         id="polygon1128"
-         style="fill:#ffffff;stroke:#ffffff;stroke-width:0" />
-    </g>
-    <g
-       transform="matrix(0.186786,0,0,0.186786,148.44593,321.33543)"
-       id="edge135"
-       class="edge">
-      <title
-         id="title1131">FCGR1_Mac
-R-&gt;Plasma_Bcell_IgG
-R</title>
-      <path
-         d="m -643.382,-1296.15 c 135.266,-82.98 435.178,-266.98 548.1345,-336.28"
-         id="path1133"
-         inkscape:connector-curvature="0"
-         style="fill:none;stroke:#ffffff;stroke-width:0" />
-      <polygon
-         points=""
-         id="polygon1135"
-         style="fill:#ffffff;stroke:#ffffff;stroke-width:0" />
-    </g>
-    <g
-       transform="matrix(0.186786,0,0,0.186786,148.44593,321.33543)"
-       id="edge136"
-       class="edge">
-      <title
-         id="title1138">FCGR1_Mac
-R-&gt;FCGR1_Mac
-R</title>
-      <path
-         d="m -631.667,-1260.51 c 10.763,1 17.929,3 17.929,5.99 0,2.94 -6.944,4.92 -17.427,5.94"
-         id="path1140"
-         inkscape:connector-curvature="0"
-         style="fill:none;stroke:#ffffff;stroke-width:0" />
-      <polygon
-         points=""
-         id="polygon1142"
-         style="fill:#ffffff;stroke:#ffffff;stroke-width:0" />
-    </g>
-    <path
-       style="fill:none;stroke:#fcbca2;stroke-width:2.24143195"
-       inkscape:connector-curvature="0"
-       id="path1147"
-       d="M 20.889957,73.117382 C 26.042823,62.440695 34.006444,47.51089 41.007557,35.276407" />
-    <polygon
-       transform="matrix(0.186786,0,0,0.186786,148.44593,321.33543)"
-       style="fill:#fcbca2;stroke:#fcbca2;stroke-width:1.11751986;stroke-miterlimit:4;stroke-dasharray:none"
-       id="polygon1149"
-       points="-539.516,-1591.87 -602.243,-1547.62 -562.055,-1564.53 -579.858,-1534.4 -575.122,-1531.6 -570.387,-1528.8 -552.584,-1558.94 -548.002,-1515.58 " />
-    <g
-       transform="matrix(0.186786,0,0,0.186786,148.44593,321.33543)"
-       id="edge137"
-       class="edge">
-      <title
-         id="title1152">FCGR1_Mac
-R-&gt;Late_Activation_CD8T
-R</title>
-      <path
-         d="m -664.298,-1318.79 c 44.02,-72.59 107.559,-189.97 142.254,-263.05"
-         id="path1154"
-         inkscape:connector-curvature="0"
-         style="fill:none;stroke:#ffffff;stroke-width:0" />
-      <polygon
-         points=""
-         id="polygon1156"
-         style="fill:#ffffff;stroke:#ffffff;stroke-width:0" />
-    </g>
-    <path
-       style="fill:none;stroke:#ffffff;stroke-width:0"
-       inkscape:connector-curvature="0"
-       id="path1161"
-       d="m 55.765892,26.532954 c 0.702502,27.35481 2.335386,90.934896 3.044238,118.539436" />
-    <g
-       transform="matrix(0.186786,0,0,0.186786,148.44593,321.33543)"
-       id="edge140"
-       class="edge">
-      <title
-         id="title1173">Late_Activation_CD8T
-R-&gt;Activated_Bcell
-R</title>
-      <path
-         d="m -435.162,-1618.01 c 137.236,69.9 460.8367,244.98 577.143,312.5"
-         id="path1175"
-         inkscape:connector-curvature="0"
-         style="fill:none;stroke:#ffffff;stroke-width:0" />
-      <polygon
-         points=""
-         id="polygon1177"
-         style="fill:#ffffff;stroke:#ffffff;stroke-width:0" />
-    </g>
-    <g
-       transform="matrix(0.186786,0,0,0.186786,148.44593,321.33543)"
-       id="edge142"
-       class="edge">
-      <title
-         id="title1187">Late_Activation_CD8T
-R-&gt;FCGR1_Mac
-R</title>
-      <path
-         d="m -531.047,-1586.39 c -38.362,70.65 -101.48,186.9 -141.919,261.38"
-         id="path1189"
-         inkscape:connector-curvature="0"
-         style="fill:none;stroke:#ffffff;stroke-width:0" />
-      <polygon
-         points=""
-         id="polygon1191"
-         style="fill:#ffffff;stroke:#ffffff;stroke-width:0" />
-    </g>
-    <g
-       transform="matrix(0.186786,0,0,0.186786,148.44593,321.33543)"
-       id="edge143"
-       class="edge">
-      <title
-         id="title1194">Late_Activation_CD8T
-R-&gt;Late_Activation_CD8T
-R</title>
-      <path
-         d="m -429.035,-1653.52 c 10.75,0.92 18.079,2.98 18.079,6.18 0,3.15 -7.101,5.2 -17.577,6.14"
-         id="path1196"
-         inkscape:connector-curvature="0"
-         style="fill:none;stroke:#ffffff;stroke-width:0" />
-      <polygon
-         points=""
-         id="polygon1198"
-         style="fill:#ffffff;stroke:#ffffff;stroke-width:0" />
-    </g>
+       style="fill:#fcbca2;stroke:#fcbca2;stroke-width:2"
+       id="polygon442"
+       points="879.343,-213.078 876.375,-194.776 865.61,-200.621 " />
   </g>
 </svg>

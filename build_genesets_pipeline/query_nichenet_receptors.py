@@ -17,11 +17,11 @@ def build_receptor_regulator_lists(receptors,
   receptor_regulators_weighted = {}
   for r in sorted(receptors):
     if r.startswith('OR') or r.startswith('TAS'):# or r.startswith('RX'):
-      logger.warning(f'Receptor hit at filter pattern ({r})')
+      logger.warning(f'Receptor hit a filtered pattern: {r}')
       continue
         
     if r not in weighted_lr_sig['from'].values:
-      logger.warning(f'Receptor not in weighted signaling graph {r}')
+      logger.warning(f'Receptor not in weighted signaling graph: {r}')
       continue
         
     regulators = weighted_lr_sig.loc[weighted_lr_sig['from'] == r, :]
@@ -265,12 +265,31 @@ def main(ARGS):
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()
 
-  parser.add_argument('receptors_fname', default=None, type=str)
-  parser.add_argument('output_dir', default=None, type=str)
-  parser.add_argument('--weighted_lr_sig', default='../data/nichenet_weighted_lr_sig.csv', type=str)
-  parser.add_argument('--weighted_gr', default='../data/nichenet_weighted_gr.csv', type=str)
-  parser.add_argument('--n_sig_partners', default=5, type=int)
-  parser.add_argument('--steps', default=2, type=int)
+  parser.add_argument(
+    'receptors_fname', default=None, type=str,
+    help='newline-delimited list of receptors to search'
+  )
+  parser.add_argument(
+    'output_dir', default=None, type=str,
+    help='someplace to stash the results. it will be created in case it does not exist.'
+  )
+  parser.add_argument(
+    '--weighted_lr_sig', default='../data/nichenet_weighted_lr_sig.csv', type=str,
+    help='a three-column table with from, to, and weight columns representing directed connections '+\
+         'between proteins'
+  )
+  parser.add_argument(
+    '--weighted_gr', default='../data/nichenet_weighted_gr.csv', type=str,
+    help='a three-column table with from, to, and weight columns representing gene regulatory relationships'
+  )
+  parser.add_argument(
+    '--steps', default=2, type=int,
+    help='the number of moves away from each start node to consider. default=2'
+  )
+  parser.add_argument(
+    '--n_sig_partners', default=10, type=int,
+    help='the maximum number of elements to take at each step. default=10'
+  )
 
   ARGS = parser.parse_args()
 

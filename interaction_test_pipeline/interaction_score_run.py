@@ -38,6 +38,7 @@ parser.add_argument(
 )
 parser.add_argument('-o', '--outdir')
 parser.add_argument('-j', '--n_jobs', default=4, type=int)
+parser.add_argument('-p', '--permutations', default=100, type=int)
 ARGS = parser.parse_args()
 
 logger = logging.getLogger('ITX POTENTIAL')
@@ -112,7 +113,7 @@ for r in receptors:
                               adata_var_id, r_adata_var_id,
                               yL_id, yR_id,
                               constraints_L_id, constraints_R_id,
-                              permutations = 100,
+                              permutations = ARGS.permutations,
                               ligand=l, receptor=r, outdir=ARGS.outdir)
     interaction_channels.append(f'{l}__{r}')
     futures.append(job_id)

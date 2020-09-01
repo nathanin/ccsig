@@ -13,6 +13,7 @@ import os
 
 from utils import make_logger
 from association_test import group_values, association_test
+from statsmodels.stats.multitest import fdrcorrection
 
 """
 We're going for a command line interface like this:
@@ -23,7 +24,7 @@ We're going for a command line interface like this:
 
 so we can call it (or generate calls) with parallel
 
-parallel --dry-run ./score_fisher.py adata.h5ad radata.h5ad -s {1} -r {2} ... ::: senders.txt ::: receivers.txt 
+parallel --dry-run ./score_expression.py adata.h5ad radata.h5ad -s {1} -r {2} ... ::: senders.txt ::: receivers.txt 
 
 radata should have an entry in `uns` that is a dictionary listing
 the active receptors for each subtype, i.e.:
@@ -53,76 +54,64 @@ NOTES:
 def get_parser():
   parser = argparse.ArgumentParser()
   parser.add_argument(
-    'adata_file', 
-    type = str,
+    'adata_file', type = str,
     help = 'path to gene expression AnnData saved as h5ad'
   )
   parser.add_argument(
-    'radata_file', 
-    type = str,
+    'radata_file', type = str,
     help = 'path to receptor score AnnData saved as h5ad'
   )
-
   parser.add_argument(
-    'output_dir', 
-    type = str,
+    'output_dir', type = str,
     help = 'path save outputs'
   )
-
   parser.add_argument(
-    '--clobber', 
-    action = 'store_true',
+    '--clobber', action = 'store_true',
     help = 'whether to overwrite existing output files'
   )
-
   parser.add_argument(
-    '-s', 
-    dest = 'sender',
-    type = str,
+    '-s', dest = 'sender', type = str,
     help = 'sending cell population'
   )
   parser.add_argument(
-    '-r', 
-    dest = 'receiver',
-    type = str,
+    '-r', dest = 'receiver', type = str,
     help = 'sending cell population'
   )
   parser.add_argument(
-    '--col', 
-    type = str,
-    dest = 'celltype_col',
+    '--col', type = str, dest = 'celltype_col',
     help = 'column of adata.obs and radata.obs to extract the celltypes'
   )
-
   parser.add_argument(
-    '--sample_col', 
-    type = str,
-    dest = 'sample_col',
+    '--sample_col', type = str, dest = 'sample_col', default = 'sample', 
     help = 'column of adata.obs and radata.obs to treat as samples'
   )
-
   parser.add_argument(
-    '--receptor_ligand_dict',
-    type = str,
+    '-d', dest='receptor_ligand_dict', type = str, required=True,
     help = 'path to a pickled python dictionary where keys are receptor gene names '+\
            'and values are matched ligands'
-
   )
   parser.add_argument(
-    '--delay_start_interval',
-    nargs = '+',
-    default = [5, 30],
+    '--delay_start_interval', nargs = '+', default = [5, 30], type=int,
     help = 'I cant believe am doing this. Delay startup (data loading) by a random number '+\
            'of seconds to avoid memory issues where the front end of the script blows up '+\
            'in memory upon loading the full adata, then drops significantly once we drop '+\
            'unused genes/receptors.'
   )
-
   parser.add_argument( 
-    '--significance', 
-    default = 0.05,
-    type = float,
+    '--significance', default = 0.05, type = float,
     help = 'pvalue to consider significant and write out receptor names'
+  )
+  parser.add_argument( 
+    '--test_type', default = 'correlation', type = str,
+    help = 'correlation, ranksum. The type of association test to run'
+  )
+  parser.add_argument( 
+    '--fdr', default = 0.05, type = float,
+    help = 'FDR level'
+  )
+  parser.add_argument( 
+    '--log', default = None, type = str,
+    help = 'log file'
   )
 
   # parser.add_argument( 
@@ -146,15 +135,19 @@ def main(ARGS):
 
   adata = sc.read_h5ad(ARGS.adata_file)
   radata = sc.read_h5ad(ARGS.radata_file)
+
+  logger.info(f'Loaded adata: {adata.shape}')
+  logger.info(f'Loaded radata: {radata.shape}')
+
   all_samples = np.unique(adata.obs[ARGS.sample_col])
   logger.info(f'Working with samples {all_samples}')
 
   logger.info('Count normalize and log the expression data')
   sc.pp.normalize_total(adata, target_sum=10000)
-  sc.pp.log1p(adata)
+  # sc.pp.log1p(adata)
 
   if adata.shape[0] != radata.shape[0]:
-    logger.warning('adata {adata.shape} != radata {radata.shape}')
+    logger.warning(f'adata {adata.shape} != radata {radata.shape}')
 
   assert ARGS.celltype_col in adata.obs.columns
   assert ARGS.celltype_col in radata.obs.columns
@@ -179,17 +172,18 @@ def main(ARGS):
   logger.info(f'Cut down adata to the sending population only ~ {adata.shape}')
   logger.info(f'Cut down radata to the receiving population only ~ {radata.shape}')
 
-  outf = open(os.path.join(ARGS.output_dir, f'{ARGS.sender}__to__{ARGS.receiver}.txt'), "w+")
 
   # Each subytpe gets its own grouping vector
   groupby_gex = np.array(adata.obs[ARGS.sample_col])
   groupby_r = np.array(radata.obs[ARGS.sample_col])
 
-  grouped_gex = group_values(adata.X.toarray(), groupby_gex, all_samples, agg='sum')
+  grouped_gex = np.log1p(group_values(adata.X.toarray(), groupby_gex, all_samples, agg='sum'))
   grouped_rscore = group_values(radata.X.toarray(), groupby_r, all_samples)
   logger.info(f'Grouped gene expression {grouped_gex.shape}')
   logger.info(f'Grouped receptor scores {grouped_rscore.shape}')
 
+  all_pvals = []
+  all_messages = []
 
   n_hits , total_tests = 0, 0
   for r in use_receptors:
@@ -208,16 +202,32 @@ def main(ARGS):
       total_tests += 1
       gex = grouped_gex[:, adata.var_names.values == l]
       pval, message = association_test(rscore, gex)
+      all_pvals.append(pval) 
+      all_messages.append(f'{l}\t{r}\t{pval:3.3e}\tmsg {message}')
 
       logger.info(f'{ARGS.sender} ({l})\t-->\t{ARGS.receiver} ({r}):\t{pval:3.3e}\t{message}')
 
-      if pval < ARGS.significance:
-        outf.write(f'{l}\t{r}\t{pval:3.5f}\n')
-        n_hits += 1
+      # if pval < ARGS.significance:
+      #   outf.write(f'{l}\t{r}\t{pval:3.5f}\tmsg {message}\n')
+      #   n_hits += 1
+
+  logger.info(f'Applying FDR correction to {len(all_pvals)} comparisons')
+  all_pvals = np.array(all_pvals)
+  all_messages = np.array(all_messages)
+  rejected_null, qvals = fdrcorrection(all_pvals, alpha=ARGS.fdr) # `rejected` refers to rejecting the null hypothesis
+
+  accepted_qval = qvals[rejected_null]
+  accepted_messages = all_messages[rejected_null]
+
+  outf = open(os.path.join(ARGS.output_dir, f'{ARGS.sender}__to__{ARGS.receiver}.txt'), "w+")
+  # stick the q-val on the back of the returned message too
+  for message, qval in zip(accepted_messages, accepted_qval):
+    message += f'\tqval={qval:1.2e}\n'
+    outf.write(message)
 
   outf.close()
+  n_hits = len(accepted_qval)
   logger.info(f'Finished with {n_hits}/{total_tests} predicted interactions')
-
 
 
 if __name__ == '__main__':
@@ -228,7 +238,7 @@ if __name__ == '__main__':
   # Check as early as possible for sender == receiver stuff 
   # Decide whether or not to allow that, i don't see why not.
 
-  logger = make_logger()
+  logger = make_logger(logfile=ARGS.log)
 
   # Check for output file existence, decide to continue or not
   outf = os.path.join(ARGS.output_dir, f'{ARGS.sender}__to__{ARGS.receiver}.txt')

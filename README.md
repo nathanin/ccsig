@@ -14,8 +14,6 @@ For now, just clone this repository and and run the pipeline scripts.
 
 ```bash
 git clone https://github.com/nathanin/ccsig
-cd ccsig
-pip install -r requirements.txt
 ```
 
 We use and depend on [`anndata`](https://anndata.readthedocs.io/en/latest/anndata.AnnData.html) and [`scanpy`](https://scanpy.readthedocs.io/en/stable/) to read and manipulate single cell expression data.

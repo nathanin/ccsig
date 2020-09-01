@@ -29,7 +29,7 @@ parser.add_argument(
 parser.add_argument(
   'constraint',
   help='Column common to adata.obs and radata.obs, denotes groups of cells to '+\
-       'constrain the interactions'
+       'constrain the interactions, e.g. samples'
 )
 parser.add_argument(
   'ligand_file',
@@ -105,13 +105,14 @@ futures = []
 interaction_channels = []
 for r in receptors:
   ligands = rl_pairs[r]
-  # Here, filter ligands for presence in the gene expression
+  # Here, filter ligands for matching columns in the gene expression
   ligands = [l for l in ligands if l in adata_var]
   for l in ligands:
     job_id = interaction_test.remote(adata_in_id, r_adata_in_id, 
                               adata_var_id, r_adata_var_id,
                               yL_id, yR_id,
                               constraints_L_id, constraints_R_id,
+                              permutations = 100,
                               ligand=l, receptor=r, outdir=ARGS.outdir)
     interaction_channels.append(f'{l}__{r}')
     futures.append(job_id)

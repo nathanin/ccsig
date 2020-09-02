@@ -73,7 +73,7 @@ logger.info(f'Got {len(receptors)} with paired annotated ligands')
 
 logger.info(f'Count normalize and log ligand expression...')
 sc.pp.normalize_total(adata, target_sum=10000)
-sc.pp.log1p(adata)
+# sc.pp.log1p(adata)
 
 
 logger.info('Starting ray')

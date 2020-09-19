@@ -1,7 +1,7 @@
 import logging
 
 
-def make_logger():
+def make_logger(logfile=None):
   # Call this one at the op of scripts
   logger = logging.getLogger("ccsig")
   logger.setLevel(logging.INFO)
@@ -18,6 +18,12 @@ def make_logger():
   # create formatter
   formatter = logging.Formatter('%(asctime)s - %(levelname)s: %(module)s %(lineno)s: %(message)s')
   console_handle.setFormatter(formatter)
+
+  if logfile is not None:
+    file_handle = logging.FileHandler(logfile)
+    file_handle.setLevel(logging.INFO)
+    file_handle.setFormatter(formatter)
+    logger.addHandler(file_handle)
 
   # now add new handler to logger
   logger.addHandler(console_handle)

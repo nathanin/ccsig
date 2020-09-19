@@ -1,6 +1,6 @@
 import numpy as np
 
-from scipy.stats import ranksums
+from scipy.stats import ranksums, spearmanr, pearsonr
 
 from utils import get_logger
 
@@ -17,13 +17,15 @@ def group_values(expr, groupby, u_groups, agg='mean',
   """
 
   logger = get_logger()
+  pct_fn = lambda x: (x > 0).mean(axis=0)
 
   if agg == 'mean':
     group_fn = lambda x: np.mean(x, axis=0)
   elif agg == 'sum':
     group_fn = lambda x: np.sum(x, axis=0)
+  elif agg == 'precent':
+    group_fn = pct_fn
 
-  pct_fn = lambda x: (x > 0).mean(axis=0)
 
   grouped = np.zeros((len(u_groups), expr.shape[1]), dtype=np.float32)
   for i, u in enumerate(u_groups):
@@ -42,7 +44,8 @@ def group_values(expr, groupby, u_groups, agg='mean',
   return grouped
 
 
-def association_test(rscore, gex, split_qs=[0.25, 0.75], min_nonzero_pct=0.5):
+def association_test(rscore, gex, split_qs=[0.25, 0.75], min_nonzero_pct=0.5, 
+                     test_type='correlation', ligand_min_var=0.3):
   """
   We have this situation: for a set of samples s=1,...,N , 
   determine if the expression of Ligand L in a subset of cells
@@ -55,6 +58,7 @@ def association_test(rscore, gex, split_qs=[0.25, 0.75], min_nonzero_pct=0.5):
     L expression also predicts (associates with) differential R  
 
   Basically this function implements procedure #2:
+  0. decide if the ligand varies across samples
   1. Split samples according to expression L by median, or specifically requested quantiles
     1a. Determine if L is significantly different according to the split ?
   2. Find R values for samples in groups L_hi and L_lo
@@ -64,6 +68,8 @@ def association_test(rscore, gex, split_qs=[0.25, 0.75], min_nonzero_pct=0.5):
   :param gex: a vector N x 1
   :param split_qs: a list of quantiles to split, default 0.25 , 0.75
   :param min_nonzero_pct: minimum percent of N samples that must be nonzero to do the test
+  :param test_type: correlation or ranksum
+  :param ligand_min_var: how to determine ligand variance
   """
 
   logger = get_logger()
@@ -73,29 +79,46 @@ def association_test(rscore, gex, split_qs=[0.25, 0.75], min_nonzero_pct=0.5):
   if gex.sum() == 0:
     return 1., 'ligand sum = 0'
 
-  qs = np.quantile(gex, split_qs)
+  if rscore.sum() == 0:
+    return 1., 'receptor sum = 0'
 
-  low_idx = gex <= qs[0]
-  high_idx = gex >= qs[1]
+  nz_l = (gex > 0).sum()
+  nz_r = (rscore > 0).sum()
 
-  low_l = gex[low_idx]
-  high_l = gex[high_idx]
-  res = ranksums(low_l, high_l)
-  if res.pvalue > 0.05:
-    return 1, 'ligand change not significant'
+  if nz_l < gex.shape[0] * 0.25:
+    return 1., 'ligand low non-zero expression'
+  if nz_r < rscore.shape[0] * 0.25:
+    return 1., 'receptor low non-zero expression'
 
-  logger.debug(f'Low L : {low_idx.sum()}')
-  logger.debug(f'High L : {high_idx.sum()}')
+  l_var = np.var(gex)
+  if l_var < ligand_min_var:
+    return 1., f'ligand low variance ({l_var:3.3f} < {ligand_min_var})'
 
-  low_r = rscore[low_idx]
-  high_r = rscore[high_idx]
+  if test_type == 'ranksum':
+    qs = np.quantile(gex, split_qs)
+    low_idx = gex <= qs[0]
+    high_idx = gex >= qs[1]
 
-  # Require the change to be positive
-  if np.mean(high_r) < np.mean(low_r):
-    return 1., 'receptor changes down'
+    low_r = rscore[low_idx]
+    high_r = rscore[high_idx]
 
-  res = ranksums(low_r, high_r)
-  pval = res.pvalue
+    # Require the change to be positive
+    if np.mean(high_r) < np.mean(low_r):
+      return 1., 'receptor changes down'
 
-  return pval, ''
+    res = ranksums(low_r, high_r)
+    pval = res.pvalue
 
+    return pval, ''
+
+  elif test_type == 'correlation':
+    res = pearsonr(gex.ravel(), rscore.ravel())
+
+    # Require the change to be positive
+    if res[0] < 0:
+      return 1., 'receptor inversely correlated with ligand'
+
+    return res[1], f'r={res[0]:3.3f} nz_l={nz_l} nz_r={nz_r}'
+
+  else:
+    return 1, 'Test type invalid'

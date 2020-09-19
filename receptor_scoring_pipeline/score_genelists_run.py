@@ -32,12 +32,25 @@ Otherwise run scoring and create a table for single cells
 parser = argparse.ArgumentParser()
 parser.add_argument(
   'genelist_dir', 
-  help='A directory containing gene lists in *.txt format'
+  help='A directory containing gene lists in newline delimited *.txt format'
 )
-parser.add_argument('adata_path')
-parser.add_argument('groupby')
-parser.add_argument('--out', default=None, type=str)
-parser.add_argument('-j', '--n_jobs', default=8, type=int)
+parser.add_argument(
+  'adata_path',
+  help='AnnData object holding gene expression'
+)
+parser.add_argument(
+  'groupby',
+  help='A column in adata.obs to use as cell groups for background gene expression'
+)
+parser.add_argument(
+  '--out', default=None, type=str,
+  help='an h5ad file to stash results. if not specified, it defaults to converting the '+\
+       'genelist_dir path into a file name'
+)
+parser.add_argument(
+  '-j', '--n_jobs', default=8, type=int,
+  help='Number of parallel jobs to launch. default=8'
+)
 ARGS = parser.parse_args()
 
 

@@ -70,7 +70,8 @@ def permute_labels(labels, constraints):
 
 
 # def _process_permutation(r_adata_in, adata_in, receptor, labels, samples, interaction_kw_args):
-def _process_permutation(xL, xR, P, yL, yR, constraints_L, constraints_R, m_y_groups, min_cells):
+def _process_permutation(xL, xR, P, yL, yR, constraints_L, constraints_R, m_y_groups, min_cells,
+                         log_receptor=False):
   # # We need this because the random state in each thread is initialized identically
   # Maybe salt the time with process id, or some unique offset 
   # pid = multiprocessing.current_process()._identity[0]
@@ -83,8 +84,10 @@ def _process_permutation(xL, xR, P, yL, yR, constraints_L, constraints_R, m_y_gr
   m_y_L = np.array([f'{m};{y}' for m, y in zip(constraints_L, yL)])
   m_y_R = np.array([f'{m};{y}' for m, y in zip(constraints_R, yR)])
 
-  L = group_cells(xL, m_y_L, u_y=m_y_groups, min_cells=min_cells, agg='sum')
+  L = np.log1p(group_cells(xL, m_y_L, u_y=m_y_groups, min_cells=min_cells, agg='sum'))
   R = group_cells(xR, m_y_R, u_y=m_y_groups, min_cells=min_cells, agg='mean')
+  if log_receptor:
+    R = np.log1p(R)
 
   I_perm = calc_interactions(R, L, P)
 
@@ -208,13 +211,21 @@ def interaction_test(adata_in, r_adata_in,
   # xR = r_adata_in.X[:, r_adata_in.var_names == receptor].toarray()
 
   xL = adata_in[:, adata_var == ligand].toarray()
-  xR = r_adata_in[:, r_adata_var == receptor].toarray()
+  if r_adata_in is None:
+    logging.info(f'{ligand} {receptor} using gene expression as the receptor value')
+    xR = adata_in[:, adata_var == receptor].toarray()
+  else:
+    xR = r_adata_in[:, r_adata_var == receptor].toarray()
 
   logging.info(f'{ligand} {receptor} xL: {xL.shape} xR: {xR.shape}')
 
   # Keep xL and xR around for permuting later
-  L = group_cells(xL, m_y_L, u_y=m_y_groups, min_cells=min_cells, agg='sum')
-  R = group_cells(xR, m_y_R, u_y=m_y_groups, min_cells=min_cells, agg='mean')
+  L = np.log1p(group_cells(xL, m_y_L, u_y=m_y_groups, min_cells=min_cells, agg='sum'))
+  if r_adata_in is None:
+    logging.info('Receptor value using gene expression matrix')
+    R = np.log1p(group_cells(xR, m_y_R, u_y=m_y_groups, min_cells=min_cells, agg='mean'))
+  else:
+    R = group_cells(xR, m_y_R, u_y=m_y_groups, min_cells=min_cells, agg='mean')
 
   # give the whole group to be interaction scored, which returns a dense np.ndarray
   # there are going to be __many__ elements which represent invalid combinations i.e. across buckets.
@@ -223,8 +234,7 @@ def interaction_test(adata_in, r_adata_in,
 
   logging.info(f'{ligand} {receptor} I_test: {I_test.shape}, {np.sum(I_test.nbytes)/(1024**2):0.2f}MB')
   logging.info(f'{ligand} {receptor} Original nonzero: {(I_test > 0).sum()}')
-  I_test_original = pd.DataFrame(I_test, index=m_y_groups, columns=m_y_groups)
-
+  I_test_original = pd.DataFrame(I_test, index=m_y_groups, columns=m_y_groups, dtype=float)
 
   perm_kwargs = dict(
     xL=xL,
@@ -235,15 +245,20 @@ def interaction_test(adata_in, r_adata_in,
     constraints_L=constraints_L,
     constraints_R=constraints_R,
     m_y_groups=m_y_groups,
-    min_cells=min_cells
+    min_cells=min_cells,
+    log_receptor=r_adata_in is None
   )
+  logging.info(f'{ligand} {receptor} Processing {permutations} permutations')
   null_interactions = [_process_permutation(**perm_kwargs) for _ in range(permutations)]
 
   null_interactions = np.dstack(null_interactions)
   significance_vals = np.quantile(null_interactions, q=sig_level, axis=-1)
 
-  # Compare I to the significance levels
+  # Compare I to the significance levels; use special value -1 to tag 
+  # values that do not pass significance. This leaves 0's as cell types
+  # that do not meet the cell number thresholds
   I_test[I_test < significance_vals] = 0
+  logging.info(f'{ligand} {receptor} Nonzero after significance threshold {np.sum(I_test > 0)}')
 
   # Construct a mask of valid within-cell-bucket comparisons 
   # This should be squares along the diagonal of the overall array
@@ -253,7 +268,11 @@ def interaction_test(adata_in, r_adata_in,
     v = (m_expanded == u_bucket).reshape(-1, 1)
     valid_I[np.matmul(v, v.T)] = 1
 
-  I_test[np.logical_not(valid_I)] = 0
+  logging.info(f'{ligand} {receptor} Identified {np.sum(valid_I)} valid cell type pairs for interactions')
+  logging.info(f'{ligand} {receptor} Setting {(I_test[np.logical_not(valid_I)] > 0).sum()} nonzero values to invalid')
+
+  # Use np.nan to tag nonsense comparisons (cross-sample)
+  I_test[np.logical_not(valid_I)] = np.nan
 
   # Use the original values to get p-values. This can help us sanity check also.
   # p vals for invalid (cross-bucket) interactions should be 1
@@ -261,9 +280,9 @@ def interaction_test(adata_in, r_adata_in,
     logging.info(f'{ligand} {receptor} Calculating pvalues: {I_test.shape}, {null_interactions.shape}')
     pvals = calc_pvals(I_test_original, null_interactions)
 
-  I_test = pd.DataFrame(I_test, index=m_y_groups, columns=m_y_groups)
+  I_test = pd.DataFrame(I_test, index=m_y_groups, columns=m_y_groups, dtype=float)
   tend = time.time()
-  logging.info(f'{ligand} {receptor} passing interactions: {(I_test.values > 0).sum()} '+\
+  logging.info(f'{ligand} {receptor} passing interactions: {(I_test.fillna(0).values > 0).sum()} '+\
                f'(of {np.prod(I_test.shape)}) {tend-tstart:3.3f}s')
 
   # TODO different output types

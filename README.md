@@ -14,15 +14,15 @@ For now, just clone this repository and and run the pipeline scripts.
 
 ```bash
 git clone https://github.com/nathanin/ccsig
-cd ccsig
-pip install -r requirements.txt
 ```
 
-We use and depend on `anndata` and `scanpy` to read and manipulate single cell expression data.
-The standard scientific python libraries including `numpy`, `pandas`, `scipy`, `scikit-learn`, `matplotlib`, `seaborn` and `graphviz` are used.
+We use and depend on [`anndata`](https://anndata.readthedocs.io/en/latest/anndata.AnnData.html) and [`scanpy`](https://scanpy.readthedocs.io/en/stable/) to read and manipulate single cell expression data.
+The standard scientific python libraries including `numpy`, `pandas`, `scipy`, `scikit-learn`, `scipy`, `matplotlib`, and `seaborn` are used.
 The parallelized workflows in this project were made possible by [`ray`](https://github.com/ray-project/ray).
 
 Tested on ubuntu 16.04 and 18.04.
+
+Minimal conda config file coming soon.
 
 <!-- [google](http://www.google.com) -->
 
@@ -32,7 +32,27 @@ Tested on ubuntu 16.04 and 18.04.
 
 A brief description of the individual piplines is provided here.
 To run each pipeline, locate the `*_run.py` script and run it. 
-For more information see the README within each pipeline directory.
+The inputs listed here are things that probably need to be gathered or prepared beforehand.
+For more details see the README within each pipeline directory.
+
+---
+
+### Build Gene Sets Pipeline
+
+Find genes downstream of a starting receptor using a weighted directed protein interaction graph, and a weighted, directed gene regulatory graph.
+
+inputs | format
+-------|--------
+list of receptors | newline delimited list receptors to find genesets for
+weighted protein-protein interaction graph | a table with columns for sender, receiver, and weight, use gene names
+weighted gene regulatory network | a table with directed and weighted gene regulatory relationships
+
+
+outputs | format
+-------|--------
+receptor gene sets | a directory populated with `*.txt` files, one per receptor, each a newline delimited listing of predicted downstream genes
+
+---
 
 ### Receptor scoring Pipeline
 
@@ -50,6 +70,7 @@ outputs | format
 single cell receptor activity scores | AnnData
 
 
+---
 
 
 ### Interaction Test Pipeline

@@ -189,7 +189,7 @@ def get_downstream_genes(starts,
 
   
 
-def get_genes(receptors, receptor_regulators_weighted, weighted_gr, steps=4, top_n_per_step=10):
+def get_genes(receptors, receptor_regulators_weighted, weighted_gr, steps=2, top_n_per_step=10):
   receptor_genelists = {}
   for r in sorted(receptors):
     if r not in receptor_regulators_weighted.keys():

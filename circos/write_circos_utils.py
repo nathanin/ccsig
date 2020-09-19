@@ -1,8 +1,31 @@
 import numpy as np
+
+'''
+/home/ing/miniconda3/envs/scrna/lib/python3.7/site-packages/anndata/_core/anndata.py:1094: \
+  FutureWarning: is_categorical is deprecated and will be removed in a future version.  \
+    Use is_categorical_dtype instead
+'''
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
+
+import pandas as pd
 import scanpy as sc
 import logging
 
+import seaborn as sns
 
+
+__all__ = [
+  'make_logger',
+  'get_logger',
+  'get_interactions',
+  'get_receptor_color',
+  'write_sender_karyotype',
+  'write_receptor_karyotype',
+  'get_ligand_color',
+  'write_ligands',
+  'draw_links'
+]
 
 def make_logger():
   logger = logging.getLogger('CIRCOS')
@@ -13,28 +36,42 @@ def make_logger():
   logger.addHandler(ch)
   return logger
 
+
+
+
 def get_logger():
   logger = logging.getLogger('CIRCOS')
   return logger
 
 
-def get_interactions(adata, radata, sender, receivers, percent_cutoff, ligands,
+
+def get_interactions(adata, radata, sender, receivers, percent_cutoff, 
                     subtype_col, broadtype_col, ligand_receptor):
   logger = get_logger()
 
   ligands = np.unique(ligand_receptor['ligand'].values)
+  logger.info(f'Inferring interactions from {len(ligands)} ligands')
 
-  celltypes = np.unique(ad.obs[broadtype_col].values)
+  receptors = np.unique(ligand_receptor['receptor'].values)
+  logger.info(f'Inferring interactions from {len(receptors)} receptors')
+
+  celltypes = np.unique(adata.obs[broadtype_col].values)
+  logger.info(f'Using {len(celltypes)} celltypes')
 
   diffrx = {}
+  singular_celltypes = []
   for ct in celltypes:
-    # if ct == 'Endothelial': continue
-    rd = radata[radata.obs[broadtype_col] == ct]
-    sc.tl.rank_genes_groups(rd, groupby=subtype_col, method='wilcoxon')
+    logger.info(f'Getting receptor enrichment for broad cell type {ct}')
 
     # get broad cell type background to use:
-
     ct_subtypes = np.unique(radata.obs[subtype_col].values[radata.obs[broadtype_col] == ct])
+    if len(ct_subtypes) == 1:
+      singular_celltypes.append(ct)
+      logger.info(f'Celltype {ct} has one subtype... ')
+      continue
+
+    rd = radata[radata.obs[broadtype_col] == ct, radata.var_names.isin(receptors)]
+    sc.tl.rank_genes_groups(rd, groupby=subtype_col, method='wilcoxon')
 
     rdx = pd.DataFrame(rd.X.toarray() > 0, index=rd.obs_names, columns=rd.var_names)
     rdx['subtype'] = rd.obs[subtype_col]
@@ -43,15 +80,20 @@ def get_interactions(adata, radata, sender, receivers, percent_cutoff, ligands,
     for st in ct_subtypes:
       expressed_receptors = rdx.columns[rdx.loc[st] > percent_cutoff].tolist() # Percent expression cutoff
       df = sc.get.rank_genes_groups_df(rd, st)
-      df = df.query("logfoldchanges > 0.5")
+
+      # Require a LFC and p-value
+      df = df.query("logfoldchanges > 0.25 & pvals_adj < 0.05")
+
       df = df.loc[df.names.isin(expressed_receptors)]
       df['subtype'] = [st] * df.shape[0]
       diffrx[st] = df.copy()
+      logger.info(f'Subtype {st} got {df.shape[0]} relatively active receptors')
           
 
   background_set = np.unique(adata.obs[adata.obs[subtype_col]==sender][broadtype_col])[0]
+  logger.info(f'Running sender ligand enrichment against background: {background_set}')
 
-  send_ad = adata[adata.obs[broadtype_col].isin(background_set), adata.var_names.isin(ligands)]
+  send_ad = adata[adata.obs[broadtype_col].isin([background_set]), adata.var_names.isin(ligands)]
   sc.tl.rank_genes_groups(send_ad, groupby=subtype_col, method='wilcoxon', n_genes=send_ad.shape[1])
   sender_df = sc.get.rank_genes_groups_df(send_ad, sender)
   sender_df = sender_df.query("logfoldchanges > 0.5 & pvals_adj < 0.05")
@@ -60,7 +102,8 @@ def get_interactions(adata, radata, sender, receivers, percent_cutoff, ligands,
   # Track the matched ligand-receptors 
   interactions = {}
   for receiver in receivers:
-    # receptor_set = diffrx[receiver].names.values[:N]
+    logger.info(f'Tracking interactions for {sender} --> {receiver}')
+
     receptor_set = diffrx[receiver].names.values
     matched = ligand_receptor.loc[ligand_receptor.receptor.isin( receptor_set )]
     ligand_set = np.unique(matched['ligand'].values)
@@ -84,11 +127,9 @@ def get_interactions(adata, radata, sender, receivers, percent_cutoff, ligands,
     # channels = sorted([c for c in channels if c in visium_channels])
     
     interactions[receiver] = channels
-    logger.info(f'{sender} --> {receiver} {channels} {len(channels)}')
+    # logger.info(f'{sender} --> {receiver} {channels} {len(channels)}')
 
-    return interactions
-
-
+  return interactions
 
 
 
@@ -103,10 +144,27 @@ def get_receptor_color(rdxe, receptor, receiver, cmap):
   return color
   
 
-  
+
+# https://stackoverflow.com/a/29643643
+def hex2rgb(h):
+  h = h.lstrip('#')
+  return tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
+
+
+
+def write_sender_karyotype(f, sender, semi_circle, total_ticks, color_palette):
+  # write the sending semi-circle
+  logger = get_logger()
+  color = ','.join([f'{v}' for v in hex2rgb(color_palette[sender])])
+  line = f'chr - {sender} {sender} {semi_circle} {total_ticks} {color}\n'
+  logger.info(line)
+  f.write(line)
+
+
+
 blues = [tuple(int(ch * 255) for ch in c) for c in sns.color_palette('Blues', 10)]
-def write_receptor_karyotype(interactions, f, hlf, txtf, start, semi_circle, 
-                             cmap=blues):
+def write_receptor_karyotype(interactions, rdxe, f, hlf, txtf, start, semi_circle, 
+                             color_palette, cmap=blues):
   logger = get_logger()
 
   # Also keep track of where to place ligands
@@ -120,13 +178,16 @@ def write_receptor_karyotype(interactions, f, hlf, txtf, start, semi_circle,
     receiver_receptors = set([x.split('_')[1] for x in channels])
     total_receptors_with_repeats += len(receiver_receptors)
 
-  logger.info(f'{total_receptors_with_repeats}')
+  logger.info(f'Total receptors with repeats: {total_receptors_with_repeats}')
   area_per_receptor = int(semi_circle / total_receptors_with_repeats)
-  logger.info(f'{area_per_receptor}')
+  logger.info(f'Area per receptor: {area_per_receptor}')
 
   celltype_start = start
   receptor_start = start
   for receiver, channels in interactions.items():
+    if len(channels) == 0:
+      logger.warn(f'Receiver {receiver} no matched ligands')
+    
     receptor_coords[receiver] = {}
     
     receiver_receptors = [x.split('_')[1] for x in channels]
@@ -155,16 +216,21 @@ def write_receptor_karyotype(interactions, f, hlf, txtf, start, semi_circle,
       
       txt = f'{receiver} {receptor_start} {receptor_end} {receptor} color={color}\n'
       txtf.write(txt)
-      
+
+      logger.info(txt.strip())
       receptor_start = receptor_end
+
     # The value of receptor start is now where our current cell type should stop
-    color = ','.join([f'{v}' for v in hex2rgb(master_palette[receiver])])
+    color = ','.join([f'{v}' for v in hex2rgb(color_palette[receiver])])
     celltype_line = f'chr - {receiver} {receiver} {celltype_start} {receptor_start} {color}\n'
+    logger.info(celltype_line.strip())
     f.write(celltype_line)
     # start for the next cell type
     celltype_start = receptor_start
       
   return ligand_order, receptor_coords
+
+
 
 
 def get_ligand_color(sdxe, ligand, sender, cmap):
@@ -177,16 +243,18 @@ def get_ligand_color(sdxe, ligand, sender, cmap):
   return color
 
 
+
+
 # Find and place ligands 
 reds = [tuple(int(ch * 255) for ch in c) for c in sns.color_palette('Reds', 10)]
-def write_ligands(hlf, txtf, start, sdxe, total_ticks, ligand_order, cmap=reds):
+def write_ligands(sdxe, sender, hlf, txtf, start, total_ticks, ligand_order, cmap=reds):
   logger = get_logger()
 
   # Track ligand positions on the sender
   ligand_coords = {}
   
   n_ligands = len(ligand_order)
-  logger.info(f'{n_ligands}')
+  logger.info(f'Writing ligands: {n_ligands}')
   borders = np.linspace(start, total_ticks, n_ligands+1, dtype=int)
   # Go in the reverse order that we wrote the receptors:
   for i, ligand in enumerate(ligand_order[::-1]):
@@ -205,11 +273,12 @@ def write_ligands(hlf, txtf, start, sdxe, total_ticks, ligand_order, cmap=reds):
 
 
 
-def draw_links(interactions, linkf, sdxe, rdxe, 
+
+def draw_links(interactions, sender, linkf, sdxe, rdxe, 
                ligand_coords, 
                receptor_coords, 
-               receiver_order=None,
-               logger=None):
+               color_palette,
+               receiver_order=None):
 
   logger = get_logger()
 
@@ -231,7 +300,7 @@ def draw_links(interactions, linkf, sdxe, rdxe,
   for receiver in receiver_order:
     channels = interactions[receiver]
     
-    color = ','.join([f'{v}' for v in hex2rgb(master_palette[receiver])])
+    color = ','.join([f'{v}' for v in hex2rgb(color_palette[receiver])])
     
     for ch in channels:
       ligand, receptor = ch.split('_')
@@ -252,7 +321,7 @@ def draw_links(interactions, linkf, sdxe, rdxe,
       
       link = f'{sender} {l0} {l1} {receiver} {r0} {r1} color={color},{trx}\n'
       
-      logger.info(link)
+      logger.info(link.strip())
       linkf.write(link)
 
 

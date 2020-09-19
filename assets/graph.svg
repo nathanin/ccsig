@@ -12,13 +12,16 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="76.516159pt"
+   width="157.61852pt"
    height="70.605232pt"
-   viewBox="0 0 76.516159 70.570791"
+   viewBox="0 0 157.61851 70.570791"
    version="1.1"
    id="svg446"
    sodipodi:docname="graph.svg"
-   inkscape:version="0.92.5 (0.92.5+69)">
+   inkscape:version="0.92.5 (0.92.5+69)"
+   inkscape:export-filename="/home/ing/devel/ccsig/assets/graph.png"
+   inkscape:export-xdpi="600"
+   inkscape:export-ydpi="600">
   <metadata
      id="metadata452">
     <rdf:RDF>
@@ -27,7 +30,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title />
+        <dc:title></dc:title>
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -139,7 +142,7 @@
      objecttolerance="10"
      gridtolerance="10"
      guidetolerance="10"
-     inkscape:pageopacity="0"
+     inkscape:pageopacity="1"
      inkscape:pageshadow="2"
      inkscape:window-width="1871"
      inkscape:window-height="1061"
@@ -149,16 +152,16 @@
      fit-margin-left="0"
      fit-margin-right="0"
      fit-margin-bottom="0"
-     inkscape:zoom="3.2635613"
-     inkscape:cx="37.020813"
-     inkscape:cy="64.547111"
-     inkscape:window-x="550"
-     inkscape:window-y="1630"
+     inkscape:zoom="2.8811127"
+     inkscape:cx="112.1325"
+     inkscape:cy="74.281349"
+     inkscape:window-x="371"
+     inkscape:window-y="274"
      inkscape:window-maximized="0"
      inkscape:current-layer="svg446" />
   <g
      id="g2495"
-     transform="translate(11.111347,0.6060648)"
+     transform="translate(55.614092,-0.6866513)"
      inkscape:export-xdpi="600"
      inkscape:export-ydpi="600">
     <circle
@@ -211,7 +214,7 @@ R</title>
          inkscape:connector-curvature="0"
          style="fill:none;stroke:#2171b5;stroke-width:5" />
       <polygon
-         points="1333.08,55.9779 1310.03,18.7951 1364.05,11.0387 "
+         points="1364.05,11.0387 1333.08,55.9779 1310.03,18.7951 "
          id="polygon351"
          style="fill:#2171b5;stroke:#2171b5;stroke-width:5" />
     </g>
@@ -229,7 +232,7 @@ R</title>
          inkscape:connector-curvature="0"
          style="fill:none;stroke:#c7dbef;stroke-width:2" />
       <polygon
-         points="1205.74,-222.238 1194.97,-228.083 1208.71,-240.54 "
+         points="1208.71,-240.54 1205.74,-222.238 1194.97,-228.083 "
          id="polygon358"
          style="fill:#c7dbef;stroke:#c7dbef;stroke-width:2" />
     </g>
@@ -247,7 +250,7 @@ R</title>
          inkscape:connector-curvature="0"
          style="fill:none;stroke:#fb6b4b;stroke-width:3" />
       <polygon
-         points="817.063,106.728 795.63,118.599 789.389,82.0459 "
+         points="789.389,82.0459 817.063,106.728 795.63,118.599 "
          id="polygon365"
          style="fill:#fb6b4b;stroke:#fb6b4b;stroke-width:3" />
     </g>
@@ -265,7 +268,7 @@ R</title>
          inkscape:connector-curvature="0"
          style="fill:none;stroke:#cb181d;stroke-width:5" />
       <polygon
-         points="936.645,-154.864 892.904,-153.948 913.727,-204.395 "
+         points="913.727,-204.395 936.645,-154.864 892.904,-153.948 "
          id="polygon372"
          style="fill:#cb181d;stroke:#cb181d;stroke-width:5" />
     </g>
@@ -283,7 +286,7 @@ R</title>
          inkscape:connector-curvature="0"
          style="fill:none;stroke:#2171b5;stroke-width:5" />
       <polygon
-         points="1378.02,83.098 1339.57,62.2223 1382.65,28.7193 "
+         points="1382.65,28.7193 1378.02,83.098 1339.57,62.2223 "
          id="polygon379"
          style="fill:#2171b5;stroke:#2171b5;stroke-width:5" />
     </g>
@@ -301,7 +304,7 @@ R</title>
          inkscape:connector-curvature="0"
          style="fill:none;stroke:#fb6b4b;stroke-width:3" />
       <polygon
-         points="862.381,58.9681 849.94,80.0741 826.009,51.7478 "
+         points="826.009,51.7478 862.381,58.9681 849.94,80.0741 "
          id="polygon386"
          style="fill:#fb6b4b;stroke:#fb6b4b;stroke-width:3" />
     </g>
@@ -319,7 +322,7 @@ R</title>
          inkscape:connector-curvature="0"
          style="fill:none;stroke:#cb181d;stroke-width:5" />
       <polygon
-         points="992.158,-182.853 954.618,-160.386 947.711,-214.523 "
+         points="947.711,-214.523 992.158,-182.853 954.618,-160.386 "
          id="polygon393"
          style="fill:#cb181d;stroke:#cb181d;stroke-width:5" />
     </g>
@@ -337,7 +340,7 @@ R</title>
          inkscape:connector-curvature="0"
          style="fill:none;stroke:#000000;stroke-width:3;stroke-dasharray:1, 5" />
       <polygon
-         points="1275.5,-230.821 1265.19,-224.203 1260.89,-242.238 "
+         points="1260.89,-242.238 1275.5,-230.821 1265.19,-224.203 "
          id="polygon400"
          style="fill:#000000;stroke:#000000;stroke-width:3" />
     </g>
@@ -355,7 +358,7 @@ R</title>
          inkscape:connector-curvature="0"
          style="fill:none;stroke:#2171b5;stroke-width:5" />
       <polygon
-         points="880.893,-41.3703 826.872,-33.6139 857.839,-78.5532 "
+         points="857.839,-78.5532 880.893,-41.3703 826.872,-33.6139 "
          id="polygon407"
          style="fill:#2171b5;stroke:#2171b5;stroke-width:5" />
     </g>
@@ -373,7 +376,7 @@ R</title>
          inkscape:connector-curvature="0"
          style="fill:none;stroke:#cb181d;stroke-width:5" />
       <polygon
-         points="1030.68,-299.963 1032.28,-256.243 981.516,-276.271 "
+         points="981.516,-276.271 1030.68,-299.963 1032.28,-256.243 "
          id="polygon414"
          style="fill:#cb181d;stroke:#cb181d;stroke-width:5" />
     </g>
@@ -391,7 +394,7 @@ R</title>
          inkscape:connector-curvature="0"
          style="fill:none;stroke:#cb181d;stroke-width:5" />
       <polygon
-         points="854.754,185.353 893.059,164.215 898.064,218.561 "
+         points="898.064,218.561 854.754,185.353 893.059,164.215 "
          id="polygon421"
          style="fill:#cb181d;stroke:#cb181d;stroke-width:5" />
     </g>
@@ -409,7 +412,7 @@ R</title>
          inkscape:connector-curvature="0"
          style="fill:none;stroke:#6caed6;stroke-width:3" />
       <polygon
-         points="859.479,200.028 880.502,187.446 887.964,223.77 "
+         points="887.964,223.77 859.479,200.028 880.502,187.446 "
          id="polygon428"
          style="fill:#6caed6;stroke:#6caed6;stroke-width:3" />
     </g>
@@ -427,7 +430,7 @@ R</title>
          inkscape:connector-curvature="0"
          style="fill:none;stroke:#fb6b4b;stroke-width:3" />
       <polygon
-         points="1131.06,225.462 1143.46,204.327 1167.45,232.599 "
+         points="1167.45,232.599 1131.06,225.462 1143.46,204.327 "
          id="polygon435"
          style="fill:#fb6b4b;stroke:#fb6b4b;stroke-width:3" />
     </g>
@@ -445,17 +448,17 @@ R</title>
          inkscape:connector-curvature="0"
          style="fill:none;stroke:#fcbca2;stroke-width:2" />
       <polygon
-         points="876.375,-194.776 865.61,-200.621 879.343,-213.078 "
+         points="879.343,-213.078 876.375,-194.776 865.61,-200.621 "
          id="polygon442"
          style="fill:#fcbca2;stroke:#fcbca2;stroke-width:2" />
     </g>
   </g>
   <g
      id="plot0-axis"
-     transform="matrix(0.0293149,0,0,0.0293149,28.647699,-8.3155542)" />
+     transform="matrix(0.0293149,0,0,0.0293149,73.150444,-9.6082703)" />
   <g
      id="g2431"
-     transform="matrix(1.3043568,0,0,1.3043568,-16.083746,-9.9310621)"
+     transform="matrix(1.3043568,0,0,1.3043568,28.418999,-11.223778)"
      inkscape:export-xdpi="600"
      inkscape:export-ydpi="600">
     <g
@@ -917,4 +920,13 @@ R</title>
        style="fill:none;stroke:#000000;stroke-width:0.0586298;stroke-linecap:round"
        id="line1358" />
   </g>
+  <rect
+     style="fill:none;fill-opacity:1;stroke:#5b3fd8;stroke-width:0;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+     id="rect982"
+     width="183.52284"
+     height="92.412216"
+     x="-13.536436"
+     y="-8.8083944"
+     inkscape:export-xdpi="600"
+     inkscape:export-ydpi="600" />
 </svg>

@@ -2,7 +2,7 @@
 
 <!-- ![graph](assets/graph.svg) -->
 <p align="center">
-  <img width="460" height="300" src="assets/graph.svg">
+  <img width="800" height="300" src="assets/graph.svg">
   <br>
   <b>Cell-Cell signaling analysis in python</b><br>
 </p>

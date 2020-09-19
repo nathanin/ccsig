@@ -62,11 +62,14 @@ parser.add_argument('-o', '--outdir', default='circos_data', type=str,
 
 parser.add_argument('--colors', default=None, type=str,
                     help = 'a dictionary of colors')
+parser.add_argument('--broadtypes', default=None, type=str,
+                    help = 'broad cell type column')
+parser.add_argument('--lr_table', default=None, type=str,
+                    help = 'table to load the LR pairs')
 parser.add_argument('--allow_interactions', default=None, type=str,
                     help = 'list of interaction channels to allow (see note)')
 
 ARGS = parser.parse_args()
-
 
 
 for k, v in ARGS.__dict__.items():
@@ -83,8 +86,12 @@ else:
 
 
 if ARGS.interactions is None:
-  pass
-  # interactions = get_interactions(adata, radata, sender, receivers, percent, subytpe_col)
+  logger.info('No interactions provided, try looking for some...')
+  lr_table = pd.read_csv(ARGS.lr_table, index_col=0, header=0)
+  ligands = np.unique(lr_table.keys())
+  interactions = get_interactions(adata, radata, sender, receivers, 
+                                  ARGS.percent, ARGS.celltypes,
+                                  ARGS.broadtypes, lr_table)
 else:
   interactions = pickle.load(open(ARGS.interactions, 'rb'))
 
@@ -95,7 +102,7 @@ logger.info(f'Drawing {len(interactions)} interactions')
 if os.path.isdir(ARGS.outdir):
   logger.warn(f'Output directory {ARGS.outdir} already exists. Contents will be overwritten.')
 else:
-  logger.info(f'Creating output direcotyr {ARGS.outdir}')
+  logger.info(f'Creating output directory {ARGS.outdir}')
   os.makdirs(ARGS.outdir)
 
 
@@ -110,7 +117,7 @@ for k, vv in interactions.items():
     all_ligands = all_ligands.union(set([ligand]))
     all_receptors = all_receptors.union(set([receptor]))
         
-sd = adata[adata.obs.BroadCellType_v2.isin(background_set), adata.var_names.isin(list(all_ligands))]
+sd = adata[adata.obs[ARGS.celltypes] == sender, adata.var_names.isin(list(all_ligands))]
 # # Percent of cells with nonzero ligand expression in sender
 # sdx = pd.DataFrame(sd.X.toarray() > 0, index=sd.obs_names, columns=sd.var_names)
 # sdx['subtype'] = sd.obs.SubType_v3
@@ -145,24 +152,23 @@ reds = [tuple(int(ch * 255) for ch in c) for c in sns.color_palette('Reds', 10)]
 blues = [tuple(int(ch * 255) for ch in c) for c in sns.color_palette('Blues', 10)]
 
 
-f = open(f'{outdir}/karyotype.txt', 'w+')
-hlf = open(f'{outdir}/highlights.txt', 'w+')
-txtf = open(f'{outdir}/genes.txt', 'w+')
-linkf = open(f'{outdir}/links.txt', 'w+')
+f = open(f'{ARGS.outdir}/karyotype.txt', 'w+')
+hlf = open(f'{ARGS.outdir}/highlights.txt', 'w+')
+txtf = open(f'{ARGS.outdir}/genes.txt', 'w+')
+linkf = open(f'{ARGS.outdir}/links.txt', 'w+')
 
 TOTAL_TICKS = 10000
 SEMI_CIRCLE = int(TOTAL_TICKS / 2)
 
-ligand_order, receptor_coords = write_receptor_karyotype(interactions, f, hlf, txtf, 0, 
-  SEMI_CIRCLE)
+ligand_order, receptor_coords = write_receptor_karyotype(interactions, f, hlf, txtf, 0, SEMI_CIRCLE)
 
 # write the sending semi-circle
 color = ','.join([f'{v}' for v in hex2rgb(master_palette[sender])])
-line = f'chr - {sender} {sender} {semi_circle} {total_ticks} {color}\n'
+line = f'chr - {sender} {sender} {SEMI_CIRCLE} {TOTAL_TICKS} {color}\n'
 logger.info(line)
 f.write(line)
 
-ligand_coords = write_ligands(hlf, txtf, semi_circle, total_ticks, ligand_order)
+ligand_coords = write_ligands(hlf, txtf, SEMI_CIRCLE, TOTAL_TICKS, ligand_order)
 
 receiver_order = list(interactions.keys())[::-1]
 draw_links(interactions, linkf, sdxe, rdxe, ligand_coords, 
@@ -172,3 +178,11 @@ f.close()
 hlf.close()
 txtf.close()
 linkf.close()
+
+
+# Copy the conf and build files to the newly created output dir
+
+# call build
+
+
+

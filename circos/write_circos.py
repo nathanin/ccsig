@@ -55,28 +55,54 @@ The data type of choice here are pickled dictionaries.
 logger = make_logger()
 
 parser = argparse.ArgumentParser()
-parser.add_argument('adata', type=str,
-                    help = 'path to input scSeq data (AnnData)')
-parser.add_argument('-d', '--radata', default=None, type=str,
-                    help = 'path to receptor activity score AnnData')
-parser.add_argument('-i', '--interactions', default=None, type=str,
-                    help = 'path to a dictionary of interactions')
-parser.add_argument('-c', '--celltypes', default=None, type=str,
-                    help = 'column to use for specific cell type annotations')
-parser.add_argument('-s', '--sender', default=None, type=str,
-                    help = 'the sender subtype')
-parser.add_argument('-r', '--receivers', default=None, nargs='+', type=str,
-                    help = 'the receiver subtypes')
-parser.add_argument('--norm_adata', action='store_true',
-                    help = 'apply log1p(CP10k) normalization to the single cells')
-parser.add_argument('--colors', default=None, type=str,
-                    help = 'a dictionary of colors')
-parser.add_argument('--palette', default='tab20', type=str,
-                    help = 'a named seaborn color palette')
-parser.add_argument('--conf', default=None, type=str,
-                    help = 'circos config.conf file')
-parser.add_argument('-o', '--outdir', default='circos_data', type=str,
-                    help = 'base directory for saving')
+parser.add_argument(
+  'adata', type=str, 
+  help = 'path to input scSeq data (AnnData)'
+)
+parser.add_argument(
+  '-d', '--radata', default=None, type=str, 
+  help = 'path to receptor activity score AnnData'
+)
+parser.add_argument(
+  '-i', '--interactions', default=None, type=str, 
+  help = 'path to a dictionary of interactions'
+)
+parser.add_argument(
+  '-c', '--celltypes', default=None, type=str, 
+  help = 'column to use for specific cell type annotations'
+)
+parser.add_argument(
+  '-s', '--sender', default=None, type=str, 
+  help = 'the sender subtype'
+)
+parser.add_argument(
+  '-r', '--receivers', default=None, nargs='+', type=str, 
+  help = 'the receiver subtypes'
+)
+parser.add_argument(
+  '--norm_adata', action='store_true',
+  help = 'apply library size normalization to the single cells'
+)
+parser.add_argument(
+  '--log1p', action='store_true',
+  help = 'apply log1p normalization to the single cells'
+)
+parser.add_argument(
+  '--colors', default=None, type=str, 
+  help = 'a dictionary of colors'
+)
+parser.add_argument(
+  '--palette', default='tab20', type=str, 
+  help = 'a named seaborn color palette'
+)
+parser.add_argument(
+  '--conf', default=None, type=str, 
+  help = 'circos config.conf file'
+)
+parser.add_argument(
+  '-o', '--outdir', default='circos_data', type=str, 
+  help = 'base directory for saving'
+)
 
 ## Options for calling ligands if none are provided upfront
 parser.add_argument('-b', '--broadtypes', default=None, type=str,
@@ -109,9 +135,9 @@ for k, v in ARGS.__dict__.items():
 sender = ARGS.sender
 
 # Allow file input for receivers
-if (len(ARGS.receivers) == 1) and os.path.exists(ARGS.receivers):
-  logger.info(f'Reading receivers from a list {ARGS.receivers}')
-  receivers = [l.strip() for l in open(ARGS.receivers, 'r')]
+if (len(ARGS.receivers) == 1) and os.path.exists(ARGS.receivers[0]):
+  logger.info(f'Reading receivers from a list {ARGS.receivers[0]}')
+  receivers = [l.strip() for l in open(ARGS.receivers[0], 'r')]
 else:
   receivers = ARGS.receivers
 
@@ -120,6 +146,8 @@ logger.info(f'adata: {adata.shape}')
 if ARGS.norm_adata:
   logger.info('Normalizing adata')
   sc.pp.normalize_total(adata, target_sum=10000)
+
+if ARGS.log1p:
   sc.pp.log1p(adata)
 
 if ARGS.radata is not None:
@@ -130,21 +158,30 @@ else:
   logger.info(f'radata: None')
 
 
+
+# ----------------------- Get some interactions to plot
+
 if ARGS.interactions is None:
   logger.info('No interactions provided, try looking for some...')
   assert ARGS.lr_table is not None
   lr_table = pd.read_csv(ARGS.lr_table, index_col=0, header=0)
   ligands = np.unique(lr_table.keys())
+
+  if ARGS.allow_interactions is not None:
+    allow_interactions = [l.strip() for l in open(ARGS.allow_interactions, 'r')]
+  else:
+    allow_interactions = None
+
   interactions = get_interactions(adata, 
                                   adata if radata is None else radata, 
-                                  sender, receivers, 
-                                  ARGS.percent, ARGS.celltypes,
-                                  ARGS.broadtypes, lr_table)
+                                  sender, receivers, ARGS.percent, 
+                                  ARGS.celltypes, ARGS.broadtypes, 
+                                  lr_table, allow_interactions)
 else:
   interactions = pickle.load(open(ARGS.interactions, 'rb'))
 
 
-# ----------------------- Get all receptors from the LR list -----------------------
+# ----------------------- Get all receptors from the LR list
 
 all_ligands = set()
 all_receptors = set()
@@ -203,8 +240,10 @@ TOTAL_TICKS = 10000
 SEMI_CIRCLE = int(TOTAL_TICKS / 2)
 
 if ARGS.colors is None:
-  colors = sns.color_palette(ARGS.palette, len(receivers)+1)
-  color_palette = {s: rgb2hex(c) for s, c in zip([sender]+receivers, colors)}
+  n_colors = len(receivers) + 1 # TODO allow more than 1 sender
+  colors = sns.color_palette(ARGS.palette, 20)
+  # np.random.shuffle(colors)
+  color_palette = {s: rgb2hex(c) for s, c in zip([sender]+receivers, colors[:n_colors])}
 
 try:
   ligand_order, receptor_coords = write_receptor_karyotype(interactions, rdxe, f, hlf, txtf, 0, 
@@ -226,9 +265,12 @@ finally:
   txtf.close()
   linkf.close()
 
-
 # Copy the conf and build files to the newly created output dir
-src = f'{parent_path}/config.conf'
+if (ARGS.conf is None) or not os.path.exists(ARGS.conf):
+  src = f'{parent_path}/config.conf'
+else:
+  src = ARGS.conf
+
 dst = f'{ARGS.outdir}/config.conf'
 logger.info(f'Copying config file {src} --> {dst}')
 shutil.copyfile(src, dst)

@@ -46,8 +46,11 @@ def get_logger():
 
 
 def get_interactions(adata, radata, sender, receivers, percent_cutoff, 
-                    subtype_col, broadtype_col, ligand_receptor):
+                     subtype_col, broadtype_col, ligand_receptor, allow_interactions=None):
   logger = get_logger()
+
+  logger.info(f'Running interaction script with adata: {adata.shape}')
+  logger.info(f'Running interaction script with radata: {radata.shape}')
 
   ligands = np.unique(ligand_receptor['ligand'].values)
   logger.info(f'Inferring interactions from {len(ligands)} ligands')
@@ -99,12 +102,21 @@ def get_interactions(adata, radata, sender, receivers, percent_cutoff,
   sender_df = sender_df.query("logfoldchanges > 0.5 & pvals_adj < 0.05")
   sender_ligands = sender_df.names.tolist()
 
+  logger.info(f'Sender subtype {sender} has {len(sender_ligands)} highly expressed ligands')
+
   # Track the matched ligand-receptors 
   interactions = {}
   for receiver in receivers:
     logger.info(f'Tracking interactions for {sender} --> {receiver}')
+    if receiver not in diffrx.keys():
+      logger.warn(f'receiver type {receiver} not in diffrx keys. It will be excluded from now on.')
+      continue
 
     receptor_set = diffrx[receiver].names.values
+
+    logger.debug(receiver)
+    logger.debug(f'{receptor_set}')
+
     matched = ligand_receptor.loc[ligand_receptor.receptor.isin( receptor_set )]
     ligand_set = np.unique(matched['ligand'].values)
     lx = adata[:, adata.var_names.isin(ligand_set)]
@@ -115,7 +127,10 @@ def get_interactions(adata, radata, sender, receivers, percent_cutoff,
     pct = dx.groupby(subtype_col).mean() > percent_cutoff
 
     hits = pct.columns[pct.loc[sender]].tolist()
+    logger.debug(f'hit expressed ligands {hits}')
+
     hits = [h for h in hits if h in sender_ligands]
+    logger.debug(f'hit up-regulated ligands {hits}')
 
     channels = []
     for h in hits:
@@ -124,8 +139,13 @@ def get_interactions(adata, radata, sender, receivers, percent_cutoff,
         if r in receptor_set:
           channels.append(f'{h}_{r}')
                 
-    # channels = sorted([c for c in channels if c in visium_channels])
-    
+    logger.debug(f'hit channels ligands {channels}')
+
+    if allow_interactions is not None:
+      channels = sorted([c for c in channels if c in allow_interactions])
+      logger.info(f'hit allowed ligands {channels}')
+
+    logger.info(f'{receiver} {len(channels)} channels')
     interactions[receiver] = channels
     # logger.info(f'{sender} --> {receiver} {channels} {len(channels)}')
 
@@ -156,7 +176,7 @@ def write_sender_karyotype(f, sender, semi_circle, total_ticks, color_palette):
   # write the sending semi-circle
   logger = get_logger()
   color = ','.join([f'{v}' for v in hex2rgb(color_palette[sender])])
-  line = f'chr - {sender} {sender} {semi_circle} {total_ticks} {color}\n'
+  line = f'chr - {sender}_s {sender}_s {semi_circle} {total_ticks} {color}\n'
   logger.info(line)
   f.write(line)
 
@@ -261,8 +281,8 @@ def write_ligands(sdxe, sender, hlf, txtf, start, total_ticks, ligand_order, cma
     ligand_start = borders[i]
     ligand_end = borders[i+1]
     color = get_ligand_color(sdxe, ligand, sender, reds)
-    hl = f'{sender} {ligand_start} {ligand_end} fill_color={color}\n'
-    txt = f'{sender} {ligand_start} {ligand_end} {ligand} color={color}\n'
+    hl = f'{sender}_s {ligand_start} {ligand_end} fill_color={color}\n'
+    txt = f'{sender}_s {ligand_start} {ligand_end} {ligand} color={color}\n'
     
     ligand_coords[ligand] = (ligand_start, ligand_end)
 
@@ -319,7 +339,7 @@ def draw_links(interactions, sender, linkf, sdxe, rdxe,
       r0 = r_c[0]
       r1 = r_c[1]
       
-      link = f'{sender} {l0} {l1} {receiver} {r0} {r1} color={color},{trx}\n'
+      link = f'{sender}_s {l0} {l1} {receiver} {r0} {r1} color={color},{trx}\n'
       
       logger.info(link.strip())
       linkf.write(link)

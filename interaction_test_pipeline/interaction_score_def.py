@@ -19,6 +19,7 @@ import logging
 # from nichenetpy import plot_interactions
 from scipy.stats.mstats import rankdata
 from interaction_util import group_cells, calc_interactions
+from scipy.sparse import csr_matrix, issparse
 
 # import logging
 
@@ -84,7 +85,8 @@ def _process_permutation(xL, xR, P, yL, yR, constraints_L, constraints_R, m_y_gr
   m_y_L = np.array([f'{m};{y}' for m, y in zip(constraints_L, shuffled_y_L)])
   m_y_R = np.array([f'{m};{y}' for m, y in zip(constraints_R, shuffled_y_R)])
 
-  L = np.log1p(group_cells(xL, m_y_L, u_y=m_y_groups, min_cells=min_cells, agg='sum'))
+  L = group_cells(xL, m_y_L, u_y=m_y_groups, min_cells=min_cells, agg='sum')
+  L = L.log1p()
   # Lpct = group_cells(xL, m_y_L, u_y=m_y_groups, min_cells=min_cells, agg='percent')
   # L[Lpct < 0.1] = 0
 
@@ -93,11 +95,87 @@ def _process_permutation(xL, xR, P, yL, yR, constraints_L, constraints_R, m_y_gr
   # R[Rpct < 0.1] = 0
 
   if log_receptor:
-    R = np.log1p(R)
+    # R = np.log1p(R)
+    R = R.log1p()
 
   I_perm = calc_interactions(R, L, P)
 
   return I_perm
+
+
+
+def sparse_dstack_quantiles(stacked_mats, q=0.5):
+  """
+  Take the element-wise quantiles at each (dim_1, dim_2) position 
+  from an input that is a list of N x N sparse matrices
+
+  we need to mimic np.quantile(X, q, axis=-1)
+
+  Test:
+  --------------
+
+  import numpy as np
+  from scipy.sparse import csr_matrix
+
+  np.random.seed(555)
+
+  mats = []
+  for _ in range(10):
+    mats.append(csr_matrix(np.random.randn(5,5)))
+
+  sparse_dstack_quantiles(mats, q=0.5).toarray()
+
+  # Out[48]: 
+  # array([[ 0.20545469,  0.41225117, -0.8104467 ,  0.28348747, -0.03070519],
+  #       [-0.2740976 , -0.62069684,  0.62272125,  0.3347416 , -0.2823262 ],
+  #       [ 0.5670694 ,  0.2513974 ,  0.22342457, -0.26506707, -0.0802396 ],
+  #       [-0.3342731 , -0.91095066, -0.16222546,  0.30816004,  0.37645936],
+  #       [-0.2903384 ,  0.11524581, -0.6032943 , -0.77617425, -0.22503667]],
+  #       dtype=float32)
+
+  mdense = np.dstack([m.toarray() for m in mats])
+  np.quantile(mdense, q=0.5, axis=-1)
+
+  # Out[50]: 
+  # array([[ 0.20545469,  0.41225117, -0.81044667,  0.28348748, -0.03070519],
+  #       [-0.27409758, -0.62069682,  0.62272124,  0.33474158, -0.28232621],
+  #       [ 0.56706943,  0.25139741,  0.22342457, -0.26506708, -0.0802396 ],
+  #       [-0.33427311, -0.91095069, -0.16222546,  0.30816003,  0.37645936],
+  #       [-0.29033839,  0.11524581, -0.60329429, -0.77617424, -0.22503667]])
+
+  """
+  N = stacked_mats[0].shape[0]
+  D = len(stacked_mats)
+  quants = csr_matrix((N, N), dtype=np.float32)
+  for i in range(N):
+    for j in range(N):
+      vals = [stacked_mats[k][i,j] for k in range(D)]
+      quants[i,j] = np.quantile(vals, q=q)
+  return quants
+
+# def interaction_test(receptor, return_null_data=False, permutations=50, 
+#                          min_cells=10, threads=4, verbose=False):
+
+
+
+def sparse_pvals(I_test, stacked_mats):
+  stacked_mats.append(I_test)
+  N = stacked_mats[0].shape[0]
+  D = len(stacked_mats)
+  pvals = csr_matrix((N, N), dtype=np.float32)
+  for i in range(N):
+    for j in range(N):
+      if I_test[i,j] == 0:
+        continue
+      vals = np.array([stacked_mats[k][i,j] for k in range(D)])
+      ranks = rankdata(-vals)
+
+      # p-value is the position of the test value amongst the permutations
+      p = ranks[-1] / (D-1)
+      pvals[i,j] = p
+
+  return pvals
+
 
 
 
@@ -108,6 +186,7 @@ def calc_pvals(I_test, null_interactions):
     [null_interactions, np.expand_dims(I_test.values, -1)],
     axis = -1
   )
+  null_stacked
 
   # Flip the order because we want high values to be low-rank
   ranks = rankdata(-null_stacked, axis=-1)
@@ -119,9 +198,6 @@ def calc_pvals(I_test, null_interactions):
   return pvals
 
 
-
-# def interaction_test(receptor, return_null_data=False, permutations=50, 
-#                          min_cells=10, threads=4, verbose=False):
 
 @ray.remote
 def interaction_test(adata_in, r_adata_in, 
@@ -192,7 +268,7 @@ def interaction_test(adata_in, r_adata_in,
 
   # Build P -- this is the trivial case, we want to expand this to the M receptor x N ligands 
   # general case at some point
-  P = np.ones(shape=(1, 1), dtype='double')
+  P = csr_matrix(np.ones(shape=(1, 1), dtype='double'))
 
   # Groupby array for receptor data and ligand data separately
   # yR = np.array(r_adata_in.obs[groupby])
@@ -228,22 +304,26 @@ def interaction_test(adata_in, r_adata_in,
 
 
   # Keep xL and xR around for permuting later
-  L = np.log1p(group_cells(xL, m_y_L, u_y=m_y_groups, min_cells=min_cells, agg='sum'))
+  L = group_cells(xL, m_y_L, u_y=m_y_groups, min_cells=min_cells, agg='sum')
+  L = L.log1p()
   Lpct = group_cells(xL, m_y_L, u_y=m_y_groups, min_cells=min_cells, agg='percent')
-  L[Lpct < expressed_percent] = 0 
+  L[Lpct.toarray() < expressed_percent] = 0 
 
   R = group_cells(xR, m_y_R, u_y=m_y_groups, min_cells=min_cells, agg='mean')
   Rpct = group_cells(xR, m_y_R, u_y=m_y_groups, min_cells=min_cells, agg='percent')
-  R[Rpct < expressed_percent] = 0
+  R[Rpct.toarray() < expressed_percent] = 0
 
   # give the whole group to be interaction scored, which returns a dense np.ndarray
   # there are going to be __many__ elements which represent invalid combinations i.e. across buckets.
   # We take care of those later.
+  logging.info(f'sparsity check... R: {issparse(R)} L: {issparse(L)} P: {issparse(P)}')
   I_test = calc_interactions(R, L, P).copy()
+  logging.info(f'sparsity check... I_test: {issparse(I_test)}')
 
-  logging.info(f'{ligand} {receptor} I_test: {I_test.shape}, {np.sum(I_test.nbytes)/(1024**2):0.2f}MB')
-  logging.info(f'{ligand} {receptor} Original nonzero (passed expression cutoff): {(I_test > 0).sum()}')
-  I_test_original = pd.DataFrame(I_test, index=m_y_groups, columns=m_y_groups, dtype=float)
+  logging.info(f'{ligand} {receptor} I_test: {I_test.shape}, {I_test.dtype}')
+  logging.info(f'{ligand} {receptor} Original nonzero (passed expression cutoff): {I_test.getnnz()}')
+  # I_test_original = pd.DataFrame(I_test, index=m_y_groups, columns=m_y_groups, dtype=float)
+  I_test_original = pd.DataFrame.sparse.from_spmatrix(I_test, index=m_y_groups, columns=m_y_groups)
 
 
   perm_kwargs = dict(
@@ -259,11 +339,14 @@ def interaction_test(adata_in, r_adata_in,
     # log_receptor=r_adata_in is None
   )
   logging.info(f'{ligand} {receptor} Processing {permutations} permutations')
+  # // this can be done with ray maybe?
   null_interactions = [_process_permutation(**perm_kwargs) for _ in range(permutations)]
 
-  null_interactions = np.dstack(null_interactions)
-  significance_vals = np.quantile(null_interactions, q=sig_level, axis=-1)
+  # null_interactions = np.dstack(null_interactions)
+  # significance_vals = np.quantile(null_interactions, q=sig_level, axis=-1)
 
+  significance_vals = sparse_dstack_quantiles(null_interactions, q=sig_level)
+  logging.info(f'significance_vals: sparse: {issparse(significance_vals)} ({significance_vals.shape})')
 
   # Compare I to the significance levels; ?? use special value -1 to tag 
   # values that do not pass significance ??. This leaves 0's as cell types
@@ -271,17 +354,16 @@ def interaction_test(adata_in, r_adata_in,
   I_test[I_test < significance_vals] = 0
   logging.info(f'{ligand} {receptor} Nonzero after significance threshold {np.sum(I_test > 0)}')
 
-
   # Construct a mask of valid within-cell-bucket comparisons 
   # This should be squares along the diagonal of the overall array
-  valid_I = np.zeros_like(I_test, dtype='bool')
+  valid_I = np.zeros((I_test.shape[0], I_test.shape[1]), dtype='bool')
   m_expanded = np.array([m.split(';')[0] for m in m_y_groups])
   for u_bucket in u_constraints:
     v = (m_expanded == u_bucket).reshape(-1, 1)
     valid_I[np.matmul(v, v.T)] = 1
 
   logging.info(f'{ligand} {receptor} Identified {np.sum(valid_I)} valid cell type pairs for interactions')
-  logging.info(f'{ligand} {receptor} Setting {(I_test[np.logical_not(valid_I)] > 0).sum()} nonzero values to invalid')
+  # logging.info(f'{ligand} {receptor} Setting {(I_test[np.logical_not(valid_I)] > 0).sum()} nonzero values to invalid')
 
   # Use np.nan to tag nonsense comparisons (cross-sample)
   I_test[np.logical_not(valid_I)] = np.nan
@@ -289,10 +371,11 @@ def interaction_test(adata_in, r_adata_in,
   # Use the original values to get p-values. This can help us sanity check also.
   # p vals for invalid (cross-bucket) interactions should be 1
   # if calculate_pvals:
-  logging.info(f'{ligand} {receptor} Calculating pvalues: {I_test.shape}, {null_interactions.shape}')
-  pvals = calc_pvals(I_test_original, null_interactions)
+  logging.info(f'{ligand} {receptor} Calculating pvalues: {I_test.shape}, {len(null_interactions)}')
+  # pvals = calc_pvals(I_test_original, null_interactions)
+  pvals = sparse_pvals(I_test, null_interactions)
 
-  I_test = pd.DataFrame(I_test, index=m_y_groups, columns=m_y_groups, dtype=float)
+  I_test = pd.DataFrame.sparse.from_spmatrix(I_test, index=m_y_groups, columns=m_y_groups)
   tend = time.time()
   logging.info(f'{ligand} {receptor} passing interactions: {(I_test.fillna(0).values > 0).sum()} '+\
                f'(of {np.prod(I_test.shape)}) {tend-tstart:3.3f}s')
@@ -309,6 +392,7 @@ def interaction_test(adata_in, r_adata_in,
 
     outf = f'{outdir}/{receptor}_{ligand}_p.pkl'
     logging.info(f'Writing p-values {pvals.shape} --> {outf}')
+    pvals = pd.DataFrame.sparse.from_spmatrix(pvals, index=m_y_groups, columns=m_y_groups)
     pvals.to_pickle(outf)
 
     return outf

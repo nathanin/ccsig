@@ -1,10 +1,11 @@
 import numpy as np
-from scipy.sparse import csr_matrix
+from scipy.sparse import csr_matrix, issparse
 
 __all__ = [
   'group_cells',
   'calc_interactions'
 ]
+
 
 def group_cells(x, y, u_y=None, min_cells=10, n=50, size=20, agg='mean'):
   """
@@ -37,6 +38,8 @@ def group_cells(x, y, u_y=None, min_cells=10, n=50, size=20, agg='mean'):
       continue
     x_u = x[idx, :]
     group_x[i, :] = agg_x(x_u, agg=agg)
+
+  group_x = csr_matrix(group_x) 
 
   return group_x
 
@@ -83,13 +86,23 @@ def calc_interactions(R, L, P, verbose=False, as_np_array=False):
   ## Receptor activity is the average of downstream genes * the expression of the receptor itself
   ## Rows ~ cells , Columns ~ ligands
 
+  # print('input: R: ', R.shape)
+  # print('input: L: ', L.shape)
+  # print('input: P: ', P.shape)
+
   # sometimes we want to normalize by the nubmer of receptor/ligands per cell:
-  n_receptors_per_cell = np.sum(R > 0, axis=1, keepdims=True).astype('double')
-  Y = np.matmul(R, P) #/ (n_receptors_per_cell)
+  n_receptors_per_cell = np.squeeze(np.sum(R.toarray() > 0, axis=1))
+  # Y = np.matmul(R, P) #/ (n_receptors_per_cell)
+  Y = R.dot(P)
+
+  # print(f'sparse Y: {issparse(Y)}')
+
+  # print('n_receptors_per_cell:', n_receptors_per_cell.shape)
+  # print('Y:', Y.shape)
 
   # Y[:, is_0] = 0
   # Y[np.isnan(Y)] = 0
-  Y[np.squeeze(n_receptors_per_cell) == 0, :] = 0
+  Y[n_receptors_per_cell == 0, :] = 0
   # if verbose:
   #   print('R:', R.shape, R.dtype)
   #   print('P:', P.shape, P.dtype)
@@ -112,14 +125,16 @@ def calc_interactions(R, L, P, verbose=False, as_np_array=False):
   #XL = np.matmul(L > 0 , Y.T) / np.sum(L > 0, axis=1, keepdims=True)
 
 
-  n_ligands_per_cell = np.sum(L > 0, axis=1, keepdims=True).astype('double')
+  n_ligands_per_cell = np.squeeze(np.sum(L.toarray() > 0, axis=1))
   # sp_I = sp_L.dot(sp_YT) / (n_ligands_per_cell)
 
   # Normalizing like this divides by 0, which gets fixed immediately, but it pops an error.
-  I = np.matmul(L, Y.T) #/ (n_ligands_per_cell)
+  # I = np.matmul(L, Y.T) #/ (n_ligands_per_cell)
+  I = L.dot(Y.transpose())
+  # print(f'sparse I: {issparse(I)}')
 
   # sp_I[np.isnan(sp_I)] = 0
-  I[np.squeeze(n_ligands_per_cell) == 0, :] = 0
+  I[n_ligands_per_cell == 0, :] = 0
   # if verbose:
   #   print('sp_I', sp_I.shape, sp_I.dtype)
 
@@ -129,6 +144,6 @@ def calc_interactions(R, L, P, verbose=False, as_np_array=False):
   # if as_np_array:
 
   # This is here in case we've been working with sparse
-  I = np.array(I)
+  # I = np.array(I)
 
   return I

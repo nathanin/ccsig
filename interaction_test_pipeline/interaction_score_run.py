@@ -23,16 +23,16 @@ parser.add_argument(
   help='AnnData object for receptor score, loaded into radata'
 )
 parser.add_argument(
-  'groupby',
+  '-g', '--groupby',
   help='Column common to adata.obs and radata.obs, usually corresponding to cell phenotypes'
 )
 parser.add_argument(
-  'constraint',
+  '-c', '--constraint',
   help='Column common to adata.obs and radata.obs, denotes groups of cells to '+\
        'constrain the interactions, e.g. samples'
 )
 parser.add_argument(
-  'ligand_file',
+  '--ligand_file',
   help='path to a pickled dictionary holding the ligand pairs with receptors as the keys '+\
        'and ligands are stored in a list'
 )
@@ -119,6 +119,7 @@ else:
   r_adata_var = np.array(radata.var_names) # same as our list of receptors above
   yR = np.array(radata.obs[ARGS.groupby])
   constraints_R = np.array(radata.obs[ARGS.constraint])
+
 
 # // make data available to multiple workers
 adata_in_id = ray.put(adata_in)

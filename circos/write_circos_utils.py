@@ -24,7 +24,9 @@ __all__ = [
   'write_receptor_karyotype',
   'get_ligand_color',
   'write_ligands',
-  'draw_links'
+  'draw_links',
+  'draw_links_contrast',
+  'filter_interactions_by_contrast',
 ]
 
 def make_logger():
@@ -74,7 +76,12 @@ def get_interactions(adata, radata, sender, receivers, percent_cutoff,
       continue
 
     rd = radata[radata.obs[broadtype_col] == ct, radata.var_names.isin(receptors)]
-    sc.tl.rank_genes_groups(rd, groupby=subtype_col, method='wilcoxon')
+    logger.info(f'Running rank genes with adata subset {rd.shape} on column {subtype_col}')
+    try:
+      sc.tl.rank_genes_groups(rd, groupby=subtype_col, method='wilcoxon')
+    except:
+      logger.warning(f'Problems running rank genes on broad type {ct}')
+      continue
 
     rdx = pd.DataFrame(rd.X.toarray() > 0, index=rd.obs_names, columns=rd.var_names)
     rdx['subtype'] = rd.obs[subtype_col]
@@ -93,7 +100,7 @@ def get_interactions(adata, radata, sender, receivers, percent_cutoff,
       logger.info(f'Subtype {st} got {df.shape[0]} relatively active receptors')
           
 
-  background_set = np.unique(adata.obs[adata.obs[subtype_col]==sender][broadtype_col])[0]
+  background_set = np.unique(adata.obs[adata.obs[subtype_col]==sender][broadtype_col])[-1]
   logger.info(f'Running sender ligand enrichment against background: {background_set}')
 
   send_ad = adata[adata.obs[broadtype_col].isin([background_set]), adata.var_names.isin(ligands)]
@@ -153,15 +160,27 @@ def get_interactions(adata, radata, sender, receivers, percent_cutoff,
 
 
 
-def get_receptor_color(rdxe, receptor, receiver, cmap):
+def get_receptor_color(rdxe, receptor, receiver, cmap, contrast=False):
   # Change color scale
   # max_val = np.max(rdxe.loc[:, receptor].values)
   max_val = np.max(rdxe.values)
-  bins = np.linspace(0, max_val, 10)
-  b = np.digitize(rdxe.loc[receiver, receptor], bins, right=True)
-  color = cmap[b]
+  min_val = np.min(rdxe.values)
+  val = rdxe.loc[receiver, receptor]
+  if contrast:
+    if val < 0:
+      bins = np.linspace(min_val, 0, 10)
+      b = np.digitize(val, bins, right=True)
+      color = cmap[0][b]
+    else:
+      bins = np.linspace(0, max_val, 10)
+      b = np.digitize(val, bins, right=True)
+      color = cmap[1][b]
+  else:
+    bins = np.linspace(min_val, max_val, 10)
+    b = np.digitize(val, bins, right=True)
+    color = cmap[b]
   color = f','.join([f'{c}' for c in color])
-  return color
+  return val, color
   
 
 
@@ -177,14 +196,14 @@ def write_sender_karyotype(f, sender, semi_circle, total_ticks, color_palette):
   logger = get_logger()
   color = ','.join([f'{v}' for v in hex2rgb(color_palette[sender])])
   line = f'chr - {sender}_s {sender}_s {semi_circle} {total_ticks} {color}\n'
-  logger.info(line)
+  logger.info(line.strip())
   f.write(line)
 
 
 
 blues = [tuple(int(ch * 255) for ch in c) for c in sns.color_palette('Blues', 10)]
 def write_receptor_karyotype(interactions, rdxe, f, hlf, txtf, start, semi_circle, 
-                             color_palette, cmap=blues):
+                             color_palette, cmap=blues, contrast=False):
   logger = get_logger()
 
   # Also keep track of where to place ligands
@@ -228,16 +247,15 @@ def write_receptor_karyotype(interactions, rdxe, f, hlf, txtf, start, semi_circl
       
       # Track the receptor coordinates on this receiver
       receptor_coords[receiver][receptor] = (receptor_start, receptor_end)
-      
-      color = get_receptor_color(rdxe, receptor, receiver, cmap)
-      
+      val, color = get_receptor_color(rdxe, receptor, receiver, cmap, contrast=contrast)
+
       hl = f'{receiver} {receptor_start} {receptor_end} fill_color={color}\n'
       hlf.write(hl)
       
       txt = f'{receiver} {receptor_start} {receptor_end} {receptor} color={color}\n'
       txtf.write(txt)
 
-      logger.info(txt.strip())
+      logger.info(f'{receiver} {receptor}: {txt.strip()} (val={val:3.3f})')
       receptor_start = receptor_end
 
     # The value of receptor start is now where our current cell type should stop
@@ -253,21 +271,35 @@ def write_receptor_karyotype(interactions, rdxe, f, hlf, txtf, start, semi_circl
 
 
 
-def get_ligand_color(sdxe, ligand, sender, cmap):
+def get_ligand_color(sdxe, ligand, sender, cmap, contrast=False):
   # Change color scale
   max_val = np.max(sdxe.values)
-  bins = np.linspace(0, max_val, 10)
-  b = np.digitize(sdxe.loc[sender, ligand], bins, right=True)
-  color = cmap[b]
+  min_val = np.min(sdxe.values)
+  val = sdxe.loc[sender, ligand]
+  if contrast:
+    if val < 0:
+      bins = np.linspace(min_val, 0, 10)
+      b = np.digitize(val, bins, right=True)
+      color = cmap[0][b]
+    else:
+      bins = np.linspace(0, max_val, 10)
+      b = np.digitize(val, bins, right=True)
+      color = cmap[1][b]
+  else:
+    bins = np.linspace(min_val, max_val, 10)
+    b = np.digitize(val, bins, right=True)
+    color = cmap[b]
   color = f','.join([f'{c}' for c in color])
-  return color
+  return val, color
+
 
 
 
 
 # Find and place ligands 
 reds = [tuple(int(ch * 255) for ch in c) for c in sns.color_palette('Reds', 10)]
-def write_ligands(sdxe, sender, hlf, txtf, start, total_ticks, ligand_order, cmap=reds):
+def write_ligands(sdxe, sender, hlf, txtf, start, total_ticks, ligand_order, 
+                  cmap=reds, contrast=False):
   logger = get_logger()
 
   # Track ligand positions on the sender
@@ -280,7 +312,7 @@ def write_ligands(sdxe, sender, hlf, txtf, start, total_ticks, ligand_order, cma
   for i, ligand in enumerate(ligand_order[::-1]):
     ligand_start = borders[i]
     ligand_end = borders[i+1]
-    color = get_ligand_color(sdxe, ligand, sender, reds)
+    val, color = get_ligand_color(sdxe, ligand, sender, cmap, contrast=contrast)
     hl = f'{sender}_s {ligand_start} {ligand_end} fill_color={color}\n'
     txt = f'{sender}_s {ligand_start} {ligand_end} {ligand} color={color}\n'
     
@@ -288,10 +320,170 @@ def write_ligands(sdxe, sender, hlf, txtf, start, total_ticks, ligand_order, cma
 
     hlf.write(hl)
     txtf.write(txt)
+
+    logger.info(f'{sender} {ligand}: {txt.strip()} (val={val:3.3f})')
   
   return ligand_coords
 
 
+
+def get_contrast_color(min_val, max_val, max_neg_val, min_pos_val, val, cmap):
+  # Change color scale
+  if val < 0:
+    bins = np.linspace(min_val, max_neg_val, 10)
+    b = np.digitize(val, bins, right=True)
+    color = cmap[0][b]
+  else:
+    bins = np.linspace(min_pos_val, max_val, 10)
+    b = np.digitize(val, bins, right=True)
+    color = cmap[1][b]
+
+  color = f','.join([f'{c}' for c in color])
+  return color
+
+
+
+
+def filter_interactions_by_contrast(interactions, sender, sdxe, rdxe, receiver_order, pct=0.5):
+  logger = get_logger()
+
+  # loop over once to get the difference distribution
+  link_vals = []
+  for receiver in receiver_order:
+    channels = interactions[receiver]
+    for ch in channels:
+      ligand, receptor = ch.split('_')
+      rc1 = rdxe[0].loc[receiver, receptor] 
+      rc2 = rdxe[1].loc[receiver, receptor]
+      sc1 = sdxe[0].loc[sender, ligand] 
+      sc2 = sdxe[1].loc[sender, ligand]
+      i1 = rc1 * sc1
+      i2 = rc2 * sc2
+      idiff = i1 - i2
+      link_vals.append(idiff)
+
+  logger.info(f'Filtering {len(link_vals)} interaction channels')
+  link_vals = np.array(link_vals)
+
+  # we want to keep things with significant deviation from 0
+  q_low = np.quantile(link_vals[link_vals < 0], 1-pct)
+  q_hi = np.quantile(link_vals[link_vals > 0], pct)
+  keep_links = np.zeros_like(link_vals, dtype=np.bool)
+  keep_links[link_vals < q_low] = True
+  keep_links[link_vals > q_hi] = True
+
+  logger.info(f'Filter ligands q_low = {q_low}')
+  logger.info(f'Filter ligands q_hi = {q_hi}')
+  logger.info(f'Keeping {keep_links.sum()} links')
+
+  i = 0
+  keep_interactions = {}
+  for receiver in receiver_order:
+    channels = interactions[receiver]
+    for ch in channels:
+      if keep_links[i]: 
+        logger.info(f'keeping link {receiver}: {ch}')
+        if receiver not in keep_interactions.keys():
+          keep_interactions[receiver] = [ch]
+        else:
+          keep_interactions[receiver].append(ch)
+      i += 1
+
+  return keep_interactions
+
+
+# sdxe and rdxe should be here length 2 lists
+def draw_links_contrast(interactions, sender, linkf, sdxe, rdxe,
+                        ligand_coords, receptor_coords, cmap, 
+                        receiver_order=None):
+  logger = get_logger()
+  logger.info('Drawing links with contrast')
+
+  if receiver_order is None:
+    receiver_order = list(interactions.keys())
+
+  # loop over once to get the difference distribution
+  max_contrast = 0
+  max_neg_val = -np.inf
+  min_contrast = 0
+  min_pos_val = np.inf
+  for receiver in receiver_order:
+    channels = interactions[receiver]
+    for ch in channels:
+      ligand, receptor = ch.split('_')
+      rc1 = rdxe[0].loc[receiver, receptor] 
+      rc2 = rdxe[1].loc[receiver, receptor]
+      sc1 = sdxe[0].loc[sender, ligand] 
+      sc2 = sdxe[1].loc[sender, ligand]
+      i1 = rc1 * sc1
+      i2 = rc2 * sc2
+      idiff = i1 - i2
+      if idiff > max_contrast:
+        max_contrast = idiff
+      if idiff < min_contrast:
+        min_contrast = idiff
+      if idiff < 0:
+        if idiff > max_neg_val:
+          max_neg_val = idiff
+      if idiff > 0:
+        if idiff < min_pos_val:
+          min_pos_val = idiff
+          
+  logger.info(f'MIN CONTRAST {min_contrast}')
+  logger.info(f'MAX CONTRAST {max_contrast}')
+  logger.info(f'MAX NEG VAL {max_neg_val}')
+  logger.info(f'MIN POS VAL {min_pos_val}')
+
+  itxp = pd.DataFrame()
+  link_strings = []
+  link_values = []
+  for receiver in receiver_order:
+    channels = interactions[receiver]
+    # color = ','.join([f'{v}' for v in hex2rgb(color_palette[receiver])])
+    
+    for ch in channels:
+      ligand, receptor = ch.split('_')
+      l_c = ligand_coords[ligand]
+      r_c = receptor_coords[receiver][receptor]
+      
+      rc1 = rdxe[0].loc[receiver, receptor] 
+      rc2 = rdxe[1].loc[receiver, receptor]
+      sc1 = sdxe[0].loc[sender, ligand] 
+      sc2 = sdxe[1].loc[sender, ligand]
+      i1 = rc1 * sc1
+      i2 = rc2 * sc2
+      idiff = i1 - i2
+      color = get_contrast_color(min_contrast, max_contrast, 
+                                 max_neg_val, min_pos_val,
+                                 idiff, cmap)
+
+      itxp.loc[f'{sender}_{ligand}', f'{receiver}_{receptor}'] = idiff
+
+      if idiff > 0:
+        trx = f'{min(1-(idiff / max_contrast)**2, 0.9):3.3f}'
+      else:
+        trx = f'{min(1-(idiff / min_contrast)**2, 0.9):3.3f}'
+      # logger.info(f'{sender}\t{ligand}\t{receiver}\t{receptor}\t{i}\t{trx}')
+      l0 = l_c[0]
+      l1 = l_c[1]
+
+      r0 = r_c[0]
+      r1 = r_c[1]
+      
+      link = f'{sender}_s {l0} {l1} {receiver} {r0} {r1} color={color},{trx}\n'
+      # link = f'{sender}_s {l0} {l1} {receiver} {r0} {r1} color={color}\n'
+      
+      logger.info(link.strip())
+      # linkf.write(link)
+      link_strings.append(link)
+      link_values.append(idiff)
+
+  link_values = np.abs(np.array(link_values))
+  perm = np.argsort(link_values)
+  for p in perm:
+    linkf.write(link_strings[p])
+
+  return itxp
 
 
 def draw_links(interactions, sender, linkf, sdxe, rdxe, 
@@ -315,8 +507,14 @@ def draw_links(interactions, sender, linkf, sdxe, rdxe,
       i = rexp * sexp
       if i > max_interaction:
         max_interaction = i
+      logger.info('\t'.join([
+        'itxval', 
+        sender, ligand,
+        receiver, receptor,
+        f'{i:3.5f}'
+        ])
+      )
           
-  logger.info(f'{max_interaction}') 
   for receiver in receiver_order:
     channels = interactions[receiver]
     

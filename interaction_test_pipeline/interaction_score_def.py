@@ -81,11 +81,17 @@ def _process_permutation(xL, xR, P, yL, yR, constraints_L, constraints_R, m_y_gr
   shuffled_y_L = permute_labels(yL, constraints_L)
   shuffled_y_R = permute_labels(yR, constraints_R)
 
-  m_y_L = np.array([f'{m};{y}' for m, y in zip(constraints_L, yL)])
-  m_y_R = np.array([f'{m};{y}' for m, y in zip(constraints_R, yR)])
+  m_y_L = np.array([f'{m};{y}' for m, y in zip(constraints_L, shuffled_y_L)])
+  m_y_R = np.array([f'{m};{y}' for m, y in zip(constraints_R, shuffled_y_R)])
 
   L = np.log1p(group_cells(xL, m_y_L, u_y=m_y_groups, min_cells=min_cells, agg='sum'))
+  # Lpct = group_cells(xL, m_y_L, u_y=m_y_groups, min_cells=min_cells, agg='percent')
+  # L[Lpct < 0.1] = 0
+
   R = group_cells(xR, m_y_R, u_y=m_y_groups, min_cells=min_cells, agg='mean')
+  # Rpct = group_cells(xR, m_y_R, u_y=m_y_groups, min_cells=min_cells, agg='percent')
+  # R[Rpct < 0.1] = 0
+
   if log_receptor:
     R = np.log1p(R)
 
@@ -114,8 +120,6 @@ def calc_pvals(I_test, null_interactions):
 
 
 
-
-
 # def interaction_test(receptor, return_null_data=False, permutations=50, 
 #                          min_cells=10, threads=4, verbose=False):
 
@@ -131,6 +135,7 @@ def interaction_test(adata_in, r_adata_in,
                     #  groupby, constraints, 
                      return_null_data=False, permutations=50, sig_level=0.5,
                      min_cells=10, 
+                     expressed_percent=0.1,
                      outdir=None,
                     #  threads=4, 
                     #  ALL_LIGANDS=None, ALL_RECEPTORS=None, 
@@ -213,28 +218,33 @@ def interaction_test(adata_in, r_adata_in,
   xL = adata_in[:, adata_var == ligand].toarray()
   if r_adata_in is None:
     logging.info(f'{ligand} {receptor} using gene expression as the receptor value')
-    xR = adata_in[:, adata_var == receptor].toarray()
+    logging.info('Receptor value using gene expression matrix; taking the log of xR')
+    xR = np.log1p(adata_in[:, adata_var == receptor].toarray())
   else:
     xR = r_adata_in[:, r_adata_var == receptor].toarray()
 
   logging.info(f'{ligand} {receptor} xL: {xL.shape} xR: {xR.shape}')
 
+
+
   # Keep xL and xR around for permuting later
   L = np.log1p(group_cells(xL, m_y_L, u_y=m_y_groups, min_cells=min_cells, agg='sum'))
-  if r_adata_in is None:
-    logging.info('Receptor value using gene expression matrix')
-    R = np.log1p(group_cells(xR, m_y_R, u_y=m_y_groups, min_cells=min_cells, agg='mean'))
-  else:
-    R = group_cells(xR, m_y_R, u_y=m_y_groups, min_cells=min_cells, agg='mean')
+  Lpct = group_cells(xL, m_y_L, u_y=m_y_groups, min_cells=min_cells, agg='percent')
+  L[Lpct < expressed_percent] = 0 
+
+  R = group_cells(xR, m_y_R, u_y=m_y_groups, min_cells=min_cells, agg='mean')
+  Rpct = group_cells(xR, m_y_R, u_y=m_y_groups, min_cells=min_cells, agg='percent')
+  R[Rpct < expressed_percent] = 0
 
   # give the whole group to be interaction scored, which returns a dense np.ndarray
   # there are going to be __many__ elements which represent invalid combinations i.e. across buckets.
   # We take care of those later.
-  I_test = calc_interactions(R, L, P)
+  I_test = calc_interactions(R, L, P).copy()
 
   logging.info(f'{ligand} {receptor} I_test: {I_test.shape}, {np.sum(I_test.nbytes)/(1024**2):0.2f}MB')
-  logging.info(f'{ligand} {receptor} Original nonzero: {(I_test > 0).sum()}')
+  logging.info(f'{ligand} {receptor} Original nonzero (passed expression cutoff): {(I_test > 0).sum()}')
   I_test_original = pd.DataFrame(I_test, index=m_y_groups, columns=m_y_groups, dtype=float)
+
 
   perm_kwargs = dict(
     xL=xL,
@@ -246,7 +256,7 @@ def interaction_test(adata_in, r_adata_in,
     constraints_R=constraints_R,
     m_y_groups=m_y_groups,
     min_cells=min_cells,
-    log_receptor=r_adata_in is None
+    # log_receptor=r_adata_in is None
   )
   logging.info(f'{ligand} {receptor} Processing {permutations} permutations')
   null_interactions = [_process_permutation(**perm_kwargs) for _ in range(permutations)]
@@ -254,11 +264,13 @@ def interaction_test(adata_in, r_adata_in,
   null_interactions = np.dstack(null_interactions)
   significance_vals = np.quantile(null_interactions, q=sig_level, axis=-1)
 
-  # Compare I to the significance levels; use special value -1 to tag 
-  # values that do not pass significance. This leaves 0's as cell types
-  # that do not meet the cell number thresholds
+
+  # Compare I to the significance levels; ?? use special value -1 to tag 
+  # values that do not pass significance ??. This leaves 0's as cell types
+  # that do not meet the cell number / expression thresholds
   I_test[I_test < significance_vals] = 0
   logging.info(f'{ligand} {receptor} Nonzero after significance threshold {np.sum(I_test > 0)}')
+
 
   # Construct a mask of valid within-cell-bucket comparisons 
   # This should be squares along the diagonal of the overall array
@@ -276,27 +288,28 @@ def interaction_test(adata_in, r_adata_in,
 
   # Use the original values to get p-values. This can help us sanity check also.
   # p vals for invalid (cross-bucket) interactions should be 1
-  if calculate_pvals:
-    logging.info(f'{ligand} {receptor} Calculating pvalues: {I_test.shape}, {null_interactions.shape}')
-    pvals = calc_pvals(I_test_original, null_interactions)
+  # if calculate_pvals:
+  logging.info(f'{ligand} {receptor} Calculating pvalues: {I_test.shape}, {null_interactions.shape}')
+  pvals = calc_pvals(I_test_original, null_interactions)
 
   I_test = pd.DataFrame(I_test, index=m_y_groups, columns=m_y_groups, dtype=float)
   tend = time.time()
   logging.info(f'{ligand} {receptor} passing interactions: {(I_test.fillna(0).values > 0).sum()} '+\
                f'(of {np.prod(I_test.shape)}) {tend-tstart:3.3f}s')
 
-  # TODO different output types
-  # New: we want to return dictionaries
-  # if return_null_data:
-  #   return {receptor: [I_test_original, I_test, pvals, null_interactions]}
-  # else:
-  #   return {receptor: [I_test_original, I_test, pvals]}
-
   # Can we check that the outdir is actually available?
   if outdir is not None:
     outf = f'{outdir}/{receptor}_{ligand}_I.pkl'
     logging.info(f'Writing {I_test.shape} --> {outf}')
     I_test.to_pickle(outf)
+
+    outf = f'{outdir}/{receptor}_{ligand}_raw.pkl'
+    logging.info(f'Writing raw interactions {I_test_original.shape} --> {outf}')
+    I_test_original.to_pickle(outf)
+
+    outf = f'{outdir}/{receptor}_{ligand}_p.pkl'
+    logging.info(f'Writing p-values {pvals.shape} --> {outf}')
+    pvals.to_pickle(outf)
 
     return outf
 

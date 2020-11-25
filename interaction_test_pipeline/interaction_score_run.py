@@ -41,19 +41,26 @@ parser.add_argument(
   default = False,
   action = 'store_true',
   help = 'whether to ignore `radata_path` and use receptor expression instead of ' +\
-         'receptor scores. still give a dummy input for `radata_path`.'
+         'receptor scores. Make sure to still give a dummy input for `radata_path`, any string will do.'
 )
 parser.add_argument('-o', '--outdir')
 parser.add_argument('-j', '--n_jobs', default=4, type=int)
 parser.add_argument('-p', '--permutations', default=100, type=int)
+parser.add_argument('--signif', default=0.5, type=float, 
+  help = 'signifcance level expressed as 1 - alpha. for instance to accept the top-5% ' +\
+         'of scores use --signif 0.95'
+)
 ARGS = parser.parse_args()
 
 logger = logging.getLogger('ITX POTENTIAL')
 logger.setLevel('INFO')
 ch = logging.StreamHandler()
+fh = logging.FileHandler(f'{ARGS.outdir}/log.txt', 'w+')
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 ch.setFormatter(formatter)
+fh.setFormatter(formatter)
 logger.addHandler(ch)
+logger.addHandler(fh)
 
 for k, v in ARGS.__dict__.items():
   logger.info(f'{k}:\t{v}')
@@ -67,8 +74,13 @@ rl_pairs = pickle.load(open( ARGS.ligand_file, "rb" ))
 
 # ligand adata with gene expression
 adata = sc.read_h5ad(ARGS.adata_path)
+
+logger.info(f'Count normalize ligand expression...')
+sc.pp.normalize_total(adata, target_sum=10000)
+
 # Do this to probably reduce memory 
 sc.pp.filter_genes(adata, min_cells=10)
+logger.info(f'Dropped genes observed in < 10 cells: {adata.shape}')
 
 # ------- Take care of receptor expression instead of score
 if not ARGS.use_receptor_expression:
@@ -83,8 +95,6 @@ logger.info(f'Ligand expression dataset: {adata.shape}')
 # logger.info(f'Receptor score dataset: {radata.shape}')
 logger.info(f'Got {len(receptors)} with paired annotated ligands')
 
-logger.info(f'Count normalize and ligand expression...')
-sc.pp.normalize_total(adata, target_sum=10000)
 # sc.pp.log1p(adata)
 
 logger.info('Starting ray')
@@ -101,7 +111,7 @@ constraints_L = np.array(adata.obs[ARGS.constraint])
 # ------- Take care of receptor expression instead of score
 if radata is None:
   r_adata_in = None
-  r_adata_var = adata_var
+  r_adata_var = adata_var.copy()
   yR = yL
   constraints_R = constraints_L
 else:
@@ -133,10 +143,13 @@ for r in receptors:
                                      adata_var_id, r_adata_var_id,
                                      yL_id, yR_id,
                                      constraints_L_id, constraints_R_id,
+                                     ligand=l, receptor=r, 
                                      permutations = ARGS.permutations,
-                                     ligand=l, receptor=r, outdir=ARGS.outdir)
+                                     sig_level = ARGS.signif,
+                                     outdir=ARGS.outdir)
     interaction_channels.append(f'{l}__{r}')
     futures.append(job_id)
+
 
 logger.info(f'Set up {len(futures)} jobs')
 logger.info('Running...')

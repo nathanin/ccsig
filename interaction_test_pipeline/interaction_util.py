@@ -18,8 +18,8 @@ def group_cells(x, y, u_y=None, min_cells=10, n=50, size=20, agg='mean'):
   :param y: vector indicating labels of x
   :param u_y: vector optionally giving an (ordered) list of uniques of y
   :param min_cells: groups with fewer than this number of instances are skipped (returned as 0's)
-  :param n: (TODO) when subsampling instead of all-sampling, this is how many reps to do
-  :param size: (TODO) when subsampling instad of all-sampling, this is how many instances 
+  :param n: (TODO)/NOT-USED when subsampling instead of all-sampling, this is how many reps to do
+  :param size: (TODO)/NOT-USED when subsampling instad of all-sampling, this is how many instances 
                 to take per rep
   :param agg: [mean, nonzero_mean, sum, percent] the aggregation type (TODO or a function)
 

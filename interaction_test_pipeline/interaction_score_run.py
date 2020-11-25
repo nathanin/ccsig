@@ -52,6 +52,9 @@ parser.add_argument('--signif', default=0.5, type=float,
 )
 ARGS = parser.parse_args()
 
+if not os.path.isdir(ARGS.outdir):
+  os.makedirs(ARGS.outdir)
+
 logger = logging.getLogger('ITX POTENTIAL')
 logger.setLevel('INFO')
 ch = logging.StreamHandler()
@@ -64,9 +67,6 @@ logger.addHandler(fh)
 
 for k, v in ARGS.__dict__.items():
   logger.info(f'{k}:\t{v}')
-
-if not os.path.isdir(ARGS.outdir):
-  os.makedirs(ARGS.outdir)
 
 # // loading data
 # Receptor ligand annotations

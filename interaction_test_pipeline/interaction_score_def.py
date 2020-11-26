@@ -277,7 +277,8 @@ def interaction_test(adata_in, r_adata_in,
 
   # Build P -- this is the trivial case, we want to expand this to the M receptor x N ligands 
   # general case at some point
-  P = lil_matrix(np.ones(shape=(1, 1), dtype='double'))
+  # P = lil_matrix(np.ones(shape=(1, 1), dtype='double'))
+  P = np.ones(shape=(1,1), dtype=np.float32)
 
   # Groupby array for receptor data and ligand data separately
   # yR = np.array(r_adata_in.obs[groupby])
@@ -315,15 +316,15 @@ def interaction_test(adata_in, r_adata_in,
   # Keep xL and xR around for permuting later
   L = group_cells(xL, m_y_L, u_y=m_y_groups, min_cells=min_cells, agg='sum', log=True)
   Lpct = group_cells(xL, m_y_L, u_y=m_y_groups, min_cells=min_cells, agg='percent')
-  logging.info(f'sparsity check 1... L: {isspmatrix_lil(L)} Lpct: {isspmatrix_lil(Lpct)}')
-  L[Lpct.toarray() < expressed_percent] = 0 
+  logging.info(f'sparsity check 1... L: {isspmatrix_lil(L)}, {L.shape} Lpct: {isspmatrix_lil(Lpct)}, {Lpct.shape}')
+  L[Lpct < expressed_percent] = 0 
   # L = L.tocsr().log1p()
   # L = np.log1p(L)
 
   R = group_cells(xR, m_y_R, u_y=m_y_groups, min_cells=min_cells, agg='mean')
   Rpct = group_cells(xR, m_y_R, u_y=m_y_groups, min_cells=min_cells, agg='percent')
-  logging.info(f'sparsity check 1... R: {isspmatrix_lil(R)} Lpct: {isspmatrix_lil(Rpct)}')
-  R[Rpct.toarray() < expressed_percent] = 0
+  logging.info(f'sparsity check 1... R: {isspmatrix_lil(R)}, {R.shape} Rpct: {isspmatrix_lil(Rpct)}, {Rpct.shape}')
+  R[Rpct < expressed_percent] = 0
   # R = R.tocsr()
 
   # give the whole group to be interaction scored, which returns a dense np.ndarray
@@ -372,6 +373,7 @@ def interaction_test(adata_in, r_adata_in,
   # Compare I to the significance levels; ?? use special value -1 to tag 
   # values that do not pass significance ??. This leaves 0's as cell types
   # that do not meet the cell number / expression thresholds
+  I_test = I_test.tolil()
   I_test[I_test < significance_vals] = 0
   logging.info(f'{ligand} {receptor} Nonzero after significance threshold {np.sum(I_test > 0)}')
 

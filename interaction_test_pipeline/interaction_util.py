@@ -31,7 +31,7 @@ def group_cells(x, y, u_y=None, min_cells=10, n=50, size=20, agg='mean', log=Fal
   if u_y is None:
     u_y = np.unique(y)
 
-  group_x = np.zeros((len(u_y), x.shape[1]))
+  group_x = np.zeros((len(u_y), x.shape[1]), dtype=np.float32)
   for i,u in enumerate(u_y):
     idx = y == u
     if idx.sum() < min_cells:
@@ -42,7 +42,7 @@ def group_cells(x, y, u_y=None, min_cells=10, n=50, size=20, agg='mean', log=Fal
   if log:
     group_x = np.log1p(group_x)
 
-  group_x = lil_matrix(group_x) 
+  # group_x = lil_matrix(group_x) 
 
   return group_x
 
@@ -71,8 +71,6 @@ def agg_x(x, agg='mean'):
 #   Divide the R and L arrays according to groups in samples_R, and samples_L
 #   """
 
-
-
 def calc_interactions(R, L, P, verbose=False, as_np_array=False):
   """
   The sparse conversions let us balloon up to quite large matrices if we want to work on individual cells
@@ -82,79 +80,97 @@ def calc_interactions(R, L, P, verbose=False, as_np_array=False):
   :param L: (M x D) (maybe sparse) matrix of ligand expression
   :param P: (C x D) (maybe sparse) matrix of receptor ligand interactivity
   """
-
-  ## Recovered ligand regulatory potential , per cell , given the receptor activity per cell
-  ## This is the sum of receptor-ligand interactions weighted by receptor activity in the cell
-  ## Receptor activity is the average of downstream genes * the expression of the receptor itself
-  ## Rows ~ cells , Columns ~ ligands
-
-  # print('input: R: ', R.shape)
-  # print('input: L: ', L.shape)
-  # print('input: P: ', P.shape)
-
-  # sometimes we want to normalize by the nubmer of receptor/ligands per cell:
-  n_receptors_per_cell = np.squeeze(np.sum(R.toarray() > 0, axis=1))
-  # Y = np.matmul(R, P) #/ (n_receptors_per_cell)
-  Y = R.dot(P)
-  # Y = Y.tolil()
-
-  # print(f'sparse check Y: {isspmatrix_lil(Y)}')
-
-  # print(f'sparse Y: {issparse(Y)}')
-
-  # print('n_receptors_per_cell:', n_receptors_per_cell.shape)
-  # print('Y:', Y.shape)
-
-  # Y[:, is_0] = 0
-  # Y[np.isnan(Y)] = 0
-  # Y[n_receptors_per_cell == 0, :] = 0
-  # if verbose:
-  #   print('R:', R.shape, R.dtype)
-  #   print('P:', P.shape, P.dtype)
-  #   print('Y:', Y.shape, Y.dtype)
-  #   print('Converting to sparse...')
-
-  # sp_YT = csr_matrix(Y.T)
-  # sp_L = csr_matrix(L)
-
-  # if verbose:
-  #   print('Multiplying sparse matrices', sp_L.shape, sp_YT.shape)
-
-  ## Cell - to - cell interaction potential is the sum (or average) of matching ligands + ligand potential
-  ## We sum over the expressed ligands in each cell, and the ligands we previously determined to potentiate
-  ## a receptor response in each other cell.
-  ## Cell, cell pairs with high agreement receive high scores.
-  ## We need a normalization scheme, as the scores grow essentially without bound.
-  ## This method has a low specificity, favoring "sending" cells with --many-- expressed ligands.
-  ## Therefore, it makes sense to scale the score according to the number of non-zero ligands on the sending cell
-  #XL = np.matmul(L > 0 , Y.T) / np.sum(L > 0, axis=1, keepdims=True)
-
-
-  n_ligands_per_cell = np.squeeze(np.sum(L.toarray() > 0, axis=1))
-  # sp_I = sp_L.dot(sp_YT) / (n_ligands_per_cell)
-
-  # Normalizing like this divides by 0, which gets fixed immediately, but it pops an error.
-  # I = np.matmul(L, Y.T) #/ (n_ligands_per_cell)
-  I = L.dot(Y.transpose())
-  # I = I.tolil()
-  # print(f'sparse I: {issparse(I)}')
-
-  # print(f'sparse check I: {isspmatrix_lil(I)}')
-
-  # sp_I[np.isnan(sp_I)] = 0
-  # I[n_ligands_per_cell == 0, :] = 0
-  # if verbose:
-  #   print('sp_I', sp_I.shape, sp_I.dtype)
-
-  # I = sp_I
-  # if verbose:
-  #   print('I:', I.shape, I.dtype)
-  # if as_np_array:
-
-  # This is here in case we've been working with sparse
-  # I = np.array(I)
-
-  # I = I.tocsr()
-  I = I.tolil()
-
+  # Y = R.dot(P)
+  Y = np.matmul(R, P)
+  # print(f'calc_interacitons Y: {Y.shape}, {Y.dtype}')
+  # I = csr_matrix(L).dot(csr_matrix(Y.T))
+  I = np.matmul(L, Y.T)
+  # print(f'calc_interacitons I: {I.shape}, {I.dtype}')
+  I = csr_matrix(I)
   return I
+
+# def calc_interactions(R, L, P, verbose=False, as_np_array=False):
+#   """
+#   The sparse conversions let us balloon up to quite large matrices if we want to work on individual cells
+#   which , for now , we don't want to do.
+
+#   :param R: (M x C) (maybe sparse) matrix of receptor scores
+#   :param L: (M x D) (maybe sparse) matrix of ligand expression
+#   :param P: (C x D) (maybe sparse) matrix of receptor ligand interactivity
+#   """
+
+#   ## Recovered ligand regulatory potential , per cell , given the receptor activity per cell
+#   ## This is the sum of receptor-ligand interactions weighted by receptor activity in the cell
+#   ## Receptor activity is the average of downstream genes * the expression of the receptor itself
+#   ## Rows ~ cells , Columns ~ ligands
+
+#   # print('input: R: ', R.shape)
+#   # print('input: L: ', L.shape)
+#   # print('input: P: ', P.shape)
+
+#   # sometimes we want to normalize by the nubmer of receptor/ligands per cell:
+#   # n_receptors_per_cell = np.squeeze(np.sum(R.toarray() > 0, axis=1))
+#   # Y = np.matmul(R, P) #/ (n_receptors_per_cell)
+#   Y = R.dot(P)
+#   # Y = Y.tolil()
+
+#   # print(f'sparse check Y: {isspmatrix_lil(Y)}')
+
+#   # print(f'sparse Y: {issparse(Y)}')
+
+#   # print('n_receptors_per_cell:', n_receptors_per_cell.shape)
+#   # print('Y:', Y.shape)
+
+#   # Y[:, is_0] = 0
+#   # Y[np.isnan(Y)] = 0
+#   # Y[n_receptors_per_cell == 0, :] = 0
+#   # if verbose:
+#   #   print('R:', R.shape, R.dtype)
+#   #   print('P:', P.shape, P.dtype)
+#   #   print('Y:', Y.shape, Y.dtype)
+#   #   print('Converting to sparse...')
+
+#   # sp_YT = csr_matrix(Y.T)
+#   # sp_L = csr_matrix(L)
+
+#   # if verbose:
+#   #   print('Multiplying sparse matrices', sp_L.shape, sp_YT.shape)
+
+#   ## Cell - to - cell interaction potential is the sum (or average) of matching ligands + ligand potential
+#   ## We sum over the expressed ligands in each cell, and the ligands we previously determined to potentiate
+#   ## a receptor response in each other cell.
+#   ## Cell, cell pairs with high agreement receive high scores.
+#   ## We need a normalization scheme, as the scores grow essentially without bound.
+#   ## This method has a low specificity, favoring "sending" cells with --many-- expressed ligands.
+#   ## Therefore, it makes sense to scale the score according to the number of non-zero ligands on the sending cell
+#   #XL = np.matmul(L > 0 , Y.T) / np.sum(L > 0, axis=1, keepdims=True)
+
+
+#   # n_ligands_per_cell = np.squeeze(np.sum(L.toarray() > 0, axis=1))
+#   # sp_I = sp_L.dot(sp_YT) / (n_ligands_per_cell)
+
+#   # Normalizing like this divides by 0, which gets fixed immediately, but it pops an error.
+#   # I = np.matmul(L, Y.T) #/ (n_ligands_per_cell)
+#   I = csr_matrix(L).dot(csr_matrix(Y.T))
+#   # I = I.tolil()
+#   # print(f'sparse I: {issparse(I)}')
+
+#   # print(f'sparse check I: {isspmatrix_lil(I)}')
+
+#   # sp_I[np.isnan(sp_I)] = 0
+#   # I[n_ligands_per_cell == 0, :] = 0
+#   # if verbose:
+#   #   print('sp_I', sp_I.shape, sp_I.dtype)
+
+#   # I = sp_I
+#   # if verbose:
+#   #   print('I:', I.shape, I.dtype)
+#   # if as_np_array:
+
+#   # This is here in case we've been working with sparse
+#   # I = np.array(I)
+
+#   # I = I.tocsr()
+#   # I = I.tolil()
+
+#   return I

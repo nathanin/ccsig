@@ -121,6 +121,9 @@ else:
   constraints_R = np.array(radata.obs[ARGS.constraint])
 
 
+# // translate labels to integer codes
+
+
 # // make data available to multiple workers
 adata_in_id = ray.put(adata_in)
 r_adata_in_id = ray.put(r_adata_in)

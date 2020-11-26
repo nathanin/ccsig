@@ -15,6 +15,8 @@ from tqdm import tqdm
 from argparse import ArgumentParser
 import logging
 
+from numba import jit
+
 # import multiprocessing
 # from nichenetpy import plot_interactions
 from scipy.stats.mstats import rankdata
@@ -40,7 +42,6 @@ assessing interactions on shuffled data.
 Report interactions that pass a significance cutoff.
 
 """
-
 
 def permute_labels(labels, constraints):
   """
@@ -150,15 +151,20 @@ def sparse_dstack_quantiles(stacked_mats, q=0.5):
   #       [-0.29033839,  0.11524581, -0.60329429, -0.77617424, -0.22503667]])
 
   """
+  t0 = time.time()
   N = stacked_mats[0].shape[0]
   D = len(stacked_mats)
   # quants = lil_matrix((N, N), dtype=np.float32)
   quants = np.zeros((N,N), dtype=np.float32)
   for i in range(N):
-    for j in range(N):
-      vals = [stacked_mats[k][i,j] for k in range(D)]
-      quants[i,j] = np.quantile(vals, q=q)
+    vals = np.zeros((N, D), dtype=np.float32)
+    for k in range(D):
+      # vals = [stacked_mats[k][i,j] for k in range(D)]
+      vals[:,k] = stacked_mats[k][i,:].toarray()
+    quants[i,:] = np.quantile(vals, q=q, axis=-1)
   # quants = quants.tocsr()
+  t1 = time.time()
+  print(f'quantiles - {t1-t0:3.3f}')
   return quants
 
 # def interaction_test(receptor, return_null_data=False, permutations=50, 
@@ -167,23 +173,27 @@ def sparse_dstack_quantiles(stacked_mats, q=0.5):
 
 
 def sparse_pvals(I_test, stacked_mats):
+  t0 = time.time()
   stacked_mats.append(I_test)
   N = stacked_mats[0].shape[0]
   D = len(stacked_mats)
   # pvals = lil_matrix((N, N), dtype=np.float32)
   pvals = np.zeros((N,N), dtype=np.float32)
   for i in range(N):
-    for j in range(N):
-      if I_test[i,j] == 0:
-        pvals[i,j] = 1
-        continue
-      vals = np.array([stacked_mats[k][i,j] for k in range(D)])
-      ranks = rankdata(-vals)
+    vals = np.zeros((N,D), dtype=np.float32)
+    for k in range(D):
+      if k == (D-1):
+        vals[:,k] = stacked_mats[k][i,:]
+      else:
+        vals[:,k] = stacked_mats[k][i,:].toarray()
+    ranks = rankdata(-vals, axis=-1)
 
-      # p-value is the position of the test value amongst the permutations
-      p = ranks[-1] / (D-1)
-      pvals[i,j] = p
+    # p-value is the position of the test value amongst the permutations
+    p = ranks[:,-1] / (D-1)
+    pvals[i,:] = p
 
+  t1 = time.time()
+  print(f'pvalues - {t1-t0:3.3f}')
   # pvals = pvals.tocsr()
   return pvals
 
@@ -297,6 +307,13 @@ def interaction_test(adata_in, r_adata_in,
   m_y_R = np.array([f'{m};{y}' for m, y in zip(constraints_R, yR)])
   m_y_L = np.array([f'{m};{y}' for m, y in zip(constraints_L, yL)])
 
+  int_group_map = {i: u for i, u in enumerate(m_y_groups)}
+  group_int_map = {u: i for i, u in enumerate(m_y_groups)}
+
+  m_y_groups_int = np.array([group_int_map[u] for u in m_y_groups], dtype=np.int) 
+  m_y_R_int = np.array([group_int_map[u] for u in m_y_R], dtype=np.int) 
+  m_y_L_int = np.array([group_int_map[u] for u in m_y_L], dtype=np.int) 
+
   logging.info(f'm_y_groups: {m_y_groups.shape}')
 
   # working with dense arrays...
@@ -317,15 +334,15 @@ def interaction_test(adata_in, r_adata_in,
 
 
   # Keep xL and xR around for permuting later
-  L = group_cells(xL, m_y_L, u_y=m_y_groups, min_cells=min_cells, agg='sum', log=True)
-  Lpct = group_cells(xL, m_y_L, u_y=m_y_groups, min_cells=min_cells, agg='percent')
+  L = group_cells(xL, m_y_L_int, u_y=m_y_groups_int, min_cells=min_cells, agg='sum', log=True)
+  Lpct = group_cells(xL, m_y_L_int, u_y=m_y_groups_int, min_cells=min_cells, agg='percent')
   logging.info(f'sparsity check 1... L: {isspmatrix_lil(L)}, {L.shape} Lpct: {isspmatrix_lil(Lpct)}, {Lpct.shape}')
   L[Lpct < expressed_percent] = 0 
   # L = L.tocsr().log1p()
   # L = np.log1p(L)
 
-  R = group_cells(xR, m_y_R, u_y=m_y_groups, min_cells=min_cells, agg='mean')
-  Rpct = group_cells(xR, m_y_R, u_y=m_y_groups, min_cells=min_cells, agg='percent')
+  R = group_cells(xR, m_y_R_int, u_y=m_y_groups_int, min_cells=min_cells, agg='mean')
+  Rpct = group_cells(xR, m_y_R_int, u_y=m_y_groups_int, min_cells=min_cells, agg='percent')
   logging.info(f'sparsity check 1... R: {isspmatrix_lil(R)}, {R.shape} Rpct: {isspmatrix_lil(Rpct)}, {Rpct.shape}')
   R[Rpct < expressed_percent] = 0
   # R = R.tocsr()

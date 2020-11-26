@@ -152,12 +152,13 @@ def sparse_dstack_quantiles(stacked_mats, q=0.5):
   """
   N = stacked_mats[0].shape[0]
   D = len(stacked_mats)
-  quants = lil_matrix((N, N), dtype=np.float32)
+  # quants = lil_matrix((N, N), dtype=np.float32)
+  quants = np.zeros((N,N), dtype=np.float32)
   for i in range(N):
     for j in range(N):
       vals = [stacked_mats[k][i,j] for k in range(D)]
       quants[i,j] = np.quantile(vals, q=q)
-  quants = quants.tocsr()
+  # quants = quants.tocsr()
   return quants
 
 # def interaction_test(receptor, return_null_data=False, permutations=50, 
@@ -169,7 +170,8 @@ def sparse_pvals(I_test, stacked_mats):
   stacked_mats.append(I_test)
   N = stacked_mats[0].shape[0]
   D = len(stacked_mats)
-  pvals = lil_matrix((N, N), dtype=np.float32)
+  # pvals = lil_matrix((N, N), dtype=np.float32)
+  pvals = np.zeros((N,N), dtype=np.float32)
   for i in range(N):
     for j in range(N):
       if I_test[i,j] == 0:
@@ -182,7 +184,7 @@ def sparse_pvals(I_test, stacked_mats):
       p = ranks[-1] / (D-1)
       pvals[i,j] = p
 
-  pvals = pvals.tocsr()
+  # pvals = pvals.tocsr()
   return pvals
 
 
@@ -295,6 +297,7 @@ def interaction_test(adata_in, r_adata_in,
   m_y_R = np.array([f'{m};{y}' for m, y in zip(constraints_R, yR)])
   m_y_L = np.array([f'{m};{y}' for m, y in zip(constraints_L, yL)])
 
+  logging.info(f'm_y_groups: {m_y_groups.shape}')
 
   # working with dense arrays...
   # Sum all the expression for each ligand per cell... (NOTE: this precludes the P matrix.)
@@ -333,14 +336,16 @@ def interaction_test(adata_in, r_adata_in,
   t0 = time.time()
   logging.info(f'sparsity check... R: {isspmatrix_lil(R)} L: {isspmatrix_lil(L)} P: {isspmatrix_lil(P)}')
   I_test = calc_interactions(R, L, P).copy()
+  I_test = I_test.toarray()
   logging.info(f'sparsity check... I_test: {isspmatrix_lil(I_test)}')
   t1 = time.time()
   # logging.info(f'dt = {t1-t0:3.4f}')
 
   logging.info(f'{ligand} {receptor} I_test: {I_test.shape}, {I_test.dtype}')
-  logging.info(f'{ligand} {receptor} Original nonzero (passed expression cutoff): {I_test.getnnz()}')
+  logging.info(f'{ligand} {receptor} Original nonzero (passed expression cutoff): {(I_test>0).sum()}')
   # I_test_original = pd.DataFrame(I_test, index=m_y_groups, columns=m_y_groups, dtype=float)
-  I_test_original = pd.DataFrame.sparse.from_spmatrix(I_test, index=m_y_groups, columns=m_y_groups)
+  # I_test_original = pd.DataFrame.sparse.from_spmatrix(I_test, index=m_y_groups, columns=m_y_groups)
+  I_test_original = pd.DataFrame(I_test, index=m_y_groups, columns=m_y_groups)
 
 
   perm_kwargs = dict(
@@ -373,7 +378,6 @@ def interaction_test(adata_in, r_adata_in,
   # Compare I to the significance levels; ?? use special value -1 to tag 
   # values that do not pass significance ??. This leaves 0's as cell types
   # that do not meet the cell number / expression thresholds
-  I_test = I_test.tolil()
   I_test[I_test < significance_vals] = 0
   logging.info(f'{ligand} {receptor} Nonzero after significance threshold {np.sum(I_test > 0)}')
 
@@ -398,7 +402,8 @@ def interaction_test(adata_in, r_adata_in,
   # pvals = calc_pvals(I_test_original, null_interactions)
   pvals = sparse_pvals(I_test, null_interactions)
 
-  I_test = pd.DataFrame.sparse.from_spmatrix(I_test, index=m_y_groups, columns=m_y_groups)
+  # I_test = pd.DataFrame.sparse.from_spmatrix(I_test, index=m_y_groups, columns=m_y_groups)
+  I_test = pd.DataFrame(I_test, index=m_y_groups, columns=m_y_groups)
   tend = time.time()
   logging.info(f'{ligand} {receptor} passing interactions: {(I_test.fillna(0).values > 0).sum()} '+\
                f'(of {np.prod(I_test.shape)}) {tend-tstart:3.3f}s')
@@ -415,7 +420,8 @@ def interaction_test(adata_in, r_adata_in,
 
     outf = f'{outdir}/{receptor}_{ligand}_p.pkl'
     logging.info(f'Writing p-values {pvals.shape} --> {outf}')
-    pvals = pd.DataFrame.sparse.from_spmatrix(pvals, index=m_y_groups, columns=m_y_groups)
+    # pvals = pd.DataFrame.sparse.from_spmatrix(pvals, index=m_y_groups, columns=m_y_groups)
+    pvals = pd.DataFrame(pvals, index=m_y_groups, columns=m_y_groups)
     pvals.to_pickle(outf)
 
     return outf

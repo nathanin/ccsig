@@ -19,7 +19,7 @@ import logging
 # from nichenetpy import plot_interactions
 from scipy.stats.mstats import rankdata
 from interaction_util import group_cells, calc_interactions
-from scipy.sparse import csr_matrix, issparse
+from scipy.sparse import csr_matrix, lil_matrix, issparse, isspmatrix_lil
 
 # import logging
 
@@ -71,11 +71,13 @@ def permute_labels(labels, constraints):
 
 
 # def _process_permutation(r_adata_in, adata_in, receptor, labels, samples, interaction_kw_args):
+# @ray.remote
 def _process_permutation(xL, xR, P, yL, yR, constraints_L, constraints_R, m_y_groups, min_cells,
                          log_receptor=False):
   # # We need this because the random state in each thread is initialized identically
   # Maybe salt the time with process id, or some unique offset 
   # pid = multiprocessing.current_process()._identity[0]
+  t0 = time.time()
   seed = int(time.time())
   np.random.seed(seed)
 
@@ -85,12 +87,14 @@ def _process_permutation(xL, xR, P, yL, yR, constraints_L, constraints_R, m_y_gr
   m_y_L = np.array([f'{m};{y}' for m, y in zip(constraints_L, shuffled_y_L)])
   m_y_R = np.array([f'{m};{y}' for m, y in zip(constraints_R, shuffled_y_R)])
 
-  L = group_cells(xL, m_y_L, u_y=m_y_groups, min_cells=min_cells, agg='sum')
-  L = L.log1p()
+  L = group_cells(xL, m_y_L, u_y=m_y_groups, min_cells=min_cells, agg='sum', log=True)
+  # L = np.log1p(L)
+  # L = L.tocsr().log1p()
   # Lpct = group_cells(xL, m_y_L, u_y=m_y_groups, min_cells=min_cells, agg='percent')
   # L[Lpct < 0.1] = 0
 
   R = group_cells(xR, m_y_R, u_y=m_y_groups, min_cells=min_cells, agg='mean')
+  # R = R.tocsr()
   # Rpct = group_cells(xR, m_y_R, u_y=m_y_groups, min_cells=min_cells, agg='percent')
   # R[Rpct < 0.1] = 0
 
@@ -99,6 +103,8 @@ def _process_permutation(xL, xR, P, yL, yR, constraints_L, constraints_R, m_y_gr
     R = R.log1p()
 
   I_perm = calc_interactions(R, L, P)
+  t1 = time.time()
+  # logging.info(f'permutation: dt = {t1-t0:3.4f}')
 
   return I_perm
 
@@ -146,11 +152,12 @@ def sparse_dstack_quantiles(stacked_mats, q=0.5):
   """
   N = stacked_mats[0].shape[0]
   D = len(stacked_mats)
-  quants = csr_matrix((N, N), dtype=np.float32)
+  quants = lil_matrix((N, N), dtype=np.float32)
   for i in range(N):
     for j in range(N):
       vals = [stacked_mats[k][i,j] for k in range(D)]
       quants[i,j] = np.quantile(vals, q=q)
+  quants = quants.tocsr()
   return quants
 
 # def interaction_test(receptor, return_null_data=False, permutations=50, 
@@ -162,10 +169,11 @@ def sparse_pvals(I_test, stacked_mats):
   stacked_mats.append(I_test)
   N = stacked_mats[0].shape[0]
   D = len(stacked_mats)
-  pvals = csr_matrix((N, N), dtype=np.float32)
+  pvals = lil_matrix((N, N), dtype=np.float32)
   for i in range(N):
     for j in range(N):
       if I_test[i,j] == 0:
+        pvals[i,j] = 1
         continue
       vals = np.array([stacked_mats[k][i,j] for k in range(D)])
       ranks = rankdata(-vals)
@@ -174,6 +182,7 @@ def sparse_pvals(I_test, stacked_mats):
       p = ranks[-1] / (D-1)
       pvals[i,j] = p
 
+  pvals = pvals.tocsr()
   return pvals
 
 
@@ -199,7 +208,7 @@ def calc_pvals(I_test, null_interactions):
 
 
 
-@ray.remote
+@ray.remote(num_cpus=1)
 def interaction_test(adata_in, r_adata_in, 
                      adata_var, r_adata_var,
                     # # just feed in the annotation vectors now; no more pulling from the adata.obs
@@ -268,7 +277,7 @@ def interaction_test(adata_in, r_adata_in,
 
   # Build P -- this is the trivial case, we want to expand this to the M receptor x N ligands 
   # general case at some point
-  P = csr_matrix(np.ones(shape=(1, 1), dtype='double'))
+  P = lil_matrix(np.ones(shape=(1, 1), dtype='double'))
 
   # Groupby array for receptor data and ligand data separately
   # yR = np.array(r_adata_in.obs[groupby])
@@ -304,21 +313,28 @@ def interaction_test(adata_in, r_adata_in,
 
 
   # Keep xL and xR around for permuting later
-  L = group_cells(xL, m_y_L, u_y=m_y_groups, min_cells=min_cells, agg='sum')
-  L = L.log1p()
+  L = group_cells(xL, m_y_L, u_y=m_y_groups, min_cells=min_cells, agg='sum', log=True)
   Lpct = group_cells(xL, m_y_L, u_y=m_y_groups, min_cells=min_cells, agg='percent')
+  logging.info(f'sparsity check 1... L: {isspmatrix_lil(L)} Lpct: {isspmatrix_lil(Lpct)}')
   L[Lpct.toarray() < expressed_percent] = 0 
+  # L = L.tocsr().log1p()
+  # L = np.log1p(L)
 
   R = group_cells(xR, m_y_R, u_y=m_y_groups, min_cells=min_cells, agg='mean')
   Rpct = group_cells(xR, m_y_R, u_y=m_y_groups, min_cells=min_cells, agg='percent')
+  logging.info(f'sparsity check 1... R: {isspmatrix_lil(R)} Lpct: {isspmatrix_lil(Rpct)}')
   R[Rpct.toarray() < expressed_percent] = 0
+  # R = R.tocsr()
 
   # give the whole group to be interaction scored, which returns a dense np.ndarray
   # there are going to be __many__ elements which represent invalid combinations i.e. across buckets.
   # We take care of those later.
-  logging.info(f'sparsity check... R: {issparse(R)} L: {issparse(L)} P: {issparse(P)}')
+  t0 = time.time()
+  logging.info(f'sparsity check... R: {isspmatrix_lil(R)} L: {isspmatrix_lil(L)} P: {isspmatrix_lil(P)}')
   I_test = calc_interactions(R, L, P).copy()
-  logging.info(f'sparsity check... I_test: {issparse(I_test)}')
+  logging.info(f'sparsity check... I_test: {isspmatrix_lil(I_test)}')
+  t1 = time.time()
+  # logging.info(f'dt = {t1-t0:3.4f}')
 
   logging.info(f'{ligand} {receptor} I_test: {I_test.shape}, {I_test.dtype}')
   logging.info(f'{ligand} {receptor} Original nonzero (passed expression cutoff): {I_test.getnnz()}')
@@ -340,13 +356,18 @@ def interaction_test(adata_in, r_adata_in,
   )
   logging.info(f'{ligand} {receptor} Processing {permutations} permutations')
   # // this can be done with ray maybe?
+  t0 = time.time()
+  # futures = [_process_permutation.remote(**perm_kwargs) for _ in range(permutations)]
+  # null_interactions = ray.get(futures)
   null_interactions = [_process_permutation(**perm_kwargs) for _ in range(permutations)]
+  t1 = time.time()
+  logging.info(f'permutation time: {t1-t0:3.4f}')
 
   # null_interactions = np.dstack(null_interactions)
   # significance_vals = np.quantile(null_interactions, q=sig_level, axis=-1)
 
   significance_vals = sparse_dstack_quantiles(null_interactions, q=sig_level)
-  logging.info(f'significance_vals: sparse: {issparse(significance_vals)} ({significance_vals.shape})')
+  logging.info(f'significance_vals: sparse: {isspmatrix_lil(significance_vals)} ({significance_vals.shape})')
 
   # Compare I to the significance levels; ?? use special value -1 to tag 
   # values that do not pass significance ??. This leaves 0's as cell types

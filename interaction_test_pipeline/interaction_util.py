@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.sparse import csr_matrix, issparse
+from scipy.sparse import lil_matrix, csr_matrix, issparse, isspmatrix_lil
 
 __all__ = [
   'group_cells',
@@ -7,7 +7,7 @@ __all__ = [
 ]
 
 
-def group_cells(x, y, u_y=None, min_cells=10, n=50, size=20, agg='mean'):
+def group_cells(x, y, u_y=None, min_cells=10, n=50, size=20, agg='mean', log=False):
   """
   build a summary of x (N x C) by grouping sets of cells (rows) by values in y (N x 1)
   according to the aggregation strategy (sum, mean, nonzero_mean, percent)
@@ -39,7 +39,10 @@ def group_cells(x, y, u_y=None, min_cells=10, n=50, size=20, agg='mean'):
     x_u = x[idx, :]
     group_x[i, :] = agg_x(x_u, agg=agg)
 
-  group_x = csr_matrix(group_x) 
+  if log:
+    group_x = np.log1p(group_x)
+
+  group_x = lil_matrix(group_x) 
 
   return group_x
 
@@ -70,7 +73,6 @@ def agg_x(x, agg='mean'):
 
 
 
-
 def calc_interactions(R, L, P, verbose=False, as_np_array=False):
   """
   The sparse conversions let us balloon up to quite large matrices if we want to work on individual cells
@@ -94,6 +96,9 @@ def calc_interactions(R, L, P, verbose=False, as_np_array=False):
   n_receptors_per_cell = np.squeeze(np.sum(R.toarray() > 0, axis=1))
   # Y = np.matmul(R, P) #/ (n_receptors_per_cell)
   Y = R.dot(P)
+  # Y = Y.tolil()
+
+  # print(f'sparse check Y: {isspmatrix_lil(Y)}')
 
   # print(f'sparse Y: {issparse(Y)}')
 
@@ -102,7 +107,7 @@ def calc_interactions(R, L, P, verbose=False, as_np_array=False):
 
   # Y[:, is_0] = 0
   # Y[np.isnan(Y)] = 0
-  Y[n_receptors_per_cell == 0, :] = 0
+  # Y[n_receptors_per_cell == 0, :] = 0
   # if verbose:
   #   print('R:', R.shape, R.dtype)
   #   print('P:', P.shape, P.dtype)
@@ -131,10 +136,13 @@ def calc_interactions(R, L, P, verbose=False, as_np_array=False):
   # Normalizing like this divides by 0, which gets fixed immediately, but it pops an error.
   # I = np.matmul(L, Y.T) #/ (n_ligands_per_cell)
   I = L.dot(Y.transpose())
+  # I = I.tolil()
   # print(f'sparse I: {issparse(I)}')
 
+  # print(f'sparse check I: {isspmatrix_lil(I)}')
+
   # sp_I[np.isnan(sp_I)] = 0
-  I[n_ligands_per_cell == 0, :] = 0
+  # I[n_ligands_per_cell == 0, :] = 0
   # if verbose:
   #   print('sp_I', sp_I.shape, sp_I.dtype)
 
@@ -145,5 +153,8 @@ def calc_interactions(R, L, P, verbose=False, as_np_array=False):
 
   # This is here in case we've been working with sparse
   # I = np.array(I)
+
+  # I = I.tocsr()
+  I = I.tolil()
 
   return I

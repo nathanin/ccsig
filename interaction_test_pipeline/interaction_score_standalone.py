@@ -35,6 +35,11 @@ assessing interactions on shuffled data.
 
 Report interactions that pass a significance cutoff.
 
+
+This script should be kept for record-keeping, but has been replaced functionally
+
+use interaction_score_run.py , or interaction_score_single.py instead
+
 """
 
 # We want these to have SubType_v4, subtype_timepoint and

@@ -3,12 +3,12 @@ import pandas as pd
 import time
 from scipy.sparse import lil_matrix, csr_matrix, issparse, isspmatrix_lil
 
+from numba import jit, prange
+
 __all__ = [
   'group_cells',
   'calc_interactions'
 ]
-
-
 
 # fns = {
 #   'mean': np.mean,
@@ -31,13 +31,86 @@ __all__ = [
 #   t1 = time.time()
 
 #   # print(f' ------- group time {t1-t0:3.3f} xout={xout.shape}')
-
 #   return xout
 
+"""
+numba versions of group_cells.
+
+group_cells is wildly slow when there are thousands of buckets, or  unique values of y.
+"""
+#https://github.com/numba/numba/issues/1269#issuecomment-702665837
+@jit(nopython=True)
+def apply_along_axis_0(func1d, arr):
+  """Like calling func1d(arr, axis=0)"""
+  if arr.size == 0:
+    raise RuntimeError("Must have arr.size > 0")
+  ndim = arr.ndim
+  if ndim == 0:
+    raise RuntimeError("Must have ndim > 0")
+  elif 1 == ndim:
+    return func1d(arr)
+  else:
+    result_shape = arr.shape[1:]
+    out = np.empty(result_shape, arr.dtype)
+    _apply_along_axis_0(func1d, arr, out)
+    return out
 
 
+@jit(nopython=True)
+def _apply_along_axis_0(func1d, arr, out):
+  """Like calling func1d(arr, axis=0, out=out). Require arr to be 2d or bigger."""
+  ndim = arr.ndim
+  if ndim < 2:
+    raise RuntimeError("_apply_along_axis_0 requires 2d array or bigger")
+  elif ndim == 2:  # 2-dimensional case
+    for i in range(len(out)):
+      out[i] = func1d(arr[:, i])
+  else:  # higher dimensional case
+    for i, out_slice in enumerate(out):
+      _apply_along_axis_0(func1d, arr[:, i], out_slice)
 
-def group_cells(x, y, u_y=None, min_cells=10, n=50, size=20, agg='mean', log=False):
+
+@jit(nopython=True)
+def nb_mean_axis_0(arr):
+  return apply_along_axis_0(np.mean, arr)
+
+
+@jit(nopython=True, parallel=True)
+def nb_groupby_sum(x, y, uy, min_cells=10):
+  xout = np.zeros((len(uy),x.shape[1]), dtype=np.float32)
+  for i in prange(len(uy)):
+    u = uy[i]
+    idx = y==u
+    if np.sum(idx) < min_cells:
+      continue
+    xout[i,:] = np.sum(x[idx,:], axis=0)
+  return xout
+
+
+@jit(nopython=True, parallel=True)
+def nb_groupby_mean(x, y, uy, min_cells=10):
+  xout = np.zeros((len(uy),x.shape[1]), dtype=np.float32)
+  for i in prange(len(uy)):
+    u = uy[i]
+    idx = y==u
+    if np.sum(idx) < min_cells:
+      continue
+    xout[i,:] = nb_mean_axis_0(x[idx,:])
+  return xout
+
+@jit(nopython=True, parallel=True)
+def nb_groupby_percent(x, y, uy, min_cells=10):
+  xout = np.zeros((len(uy),x.shape[1]), dtype=np.float32)
+  for i in prange(len(uy)):
+    u = uy[i]
+    idx = y==u
+    if np.sum(idx) < min_cells:
+      continue
+    xout[i,:] = nb_mean_axis_0(x[idx,:] > 0)
+  return xout
+
+
+def group_cells(x, y, u_y=None, min_cells=10, n=50, size=20, agg=np.sum, log=False):
   """
   build a summary of x (N x C) by grouping sets of cells (rows) by values in y (N x 1)
   according to the aggregation strategy (sum, mean, nonzero_mean, percent)
@@ -57,23 +130,24 @@ def group_cells(x, y, u_y=None, min_cells=10, n=50, size=20, agg='mean', log=Fal
   Returns
   group_x ~ (M x C)
   """
-  t0 = time.time()
+  #t0 = time.time()
   if u_y is None:
     u_y = np.unique(y)
 
   group_x = np.zeros((len(u_y), x.shape[1]), dtype=np.float32)
   for i,u in enumerate(u_y):
     idx = y == u
-    if idx.sum() < min_cells:
+    if np.sum(idx) < min_cells:
       continue
     x_u = x[idx, :]
-    group_x[i, :] = agg_x(x_u, agg=agg)
+    # group_x[i, :] = agg_x(x_u, agg=agg)
+    group_x[i, :] = agg(x_u)
 
   if log:
     group_x = np.log1p(group_x)
 
   # group_x = lil_matrix(group_x) 
-  t1 = time.time()
+  #t1 = time.time()
 
   # print(f' ------- group time {t1-t0:3.3f} group_x={group_x.shape}')
 
@@ -95,8 +169,6 @@ def agg_x(x, agg='mean'):
     x_ = np.mean((x > 0), axis=0)
 
   return x_ 
-
-
 
 
 # def constrained_interaction_score(R, L, P, samples_R, samples_L):
@@ -121,6 +193,7 @@ def calc_interactions(R, L, P, verbose=False, as_np_array=False):
   # print(f'calc_interacitons I: {I.shape}, {I.dtype}')
   I = csr_matrix(I)
   return I
+
 
 # def calc_interactions(R, L, P, verbose=False, as_np_array=False):
 #   """

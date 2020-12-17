@@ -52,6 +52,12 @@ parser.add_argument(
   help = 'whether to ignore `radata_path` and use receptor expression instead of ' +\
          'receptor scores. Make sure to still give a dummy input for `radata_path`, any string will do.'
 )
+parser.add_argument(
+  '--exclude',
+  default=['x'],
+  nargs='+',
+  help='names of celltypes (given in groupby) to wholesale exclude from analysis'
+)
 parser.add_argument('-o', '--outdir')
 parser.add_argument('-p', '--permutations', default=1000, type=int)
 parser.add_argument('--signif', default=0.05, type=float, 
@@ -65,7 +71,7 @@ if not os.path.isdir(ARGS.outdir):
 logger = logging.getLogger('ITX POTENTIAL')
 logger.setLevel('INFO')
 ch = logging.StreamHandler()
-fh = logging.FileHandler(f'{ARGS.outdir}/{ARGS.receptor}_{ARGS.ligand}log.txt', 'w+')
+fh = logging.FileHandler(f'{ARGS.outdir}/{ARGS.receptor}_{ARGS.ligand}_log.txt', 'w+')
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 ch.setFormatter(formatter)
 fh.setFormatter(formatter)
@@ -78,49 +84,66 @@ for k, v in ARGS.__dict__.items():
 
 
 # // loading data
-# Receptor ligand annotations
-rl_pairs = pickle.load(open( ARGS.ligand_file, "rb" ))
+# # Receptor ligand annotations
+# rl_pairs = pickle.load(open( ARGS.ligand_file, "rb" ))
 
 # ligand adata with gene expression
 adata = sc.read_h5ad(ARGS.adata_path)
+if len(ARGS.exclude) > 0:
+  logger.info(f'Removing cells in groups: {ARGS.exclude}')
+  adata = adata[~adata.obs[ARGS.groupby].isin(ARGS.exclude)]
 
 logger.info(f'Count normalize ligand expression...')
 sc.pp.normalize_total(adata, target_sum=10000)
 
 # Do this to probably reduce memory 
-sc.pp.filter_genes(adata, min_cells=10)
-logger.info(f'Dropped genes observed in < 10 cells: {adata.shape}')
-
-# ------- Take care of receptor expression instead of score
-if not ARGS.use_receptor_expression:
-  radata = sc.read_h5ad(ARGS.radata_path)
-  receptors = list(radata.var_names)
-  receptors = [r for r in receptors if r in rl_pairs.keys()]
-elif ARGS.use_receptor_expression:
-  radata = None
-  receptors = [r for r in list(adata.var_names) if r in rl_pairs.keys()]
-
-logger.info(f'Ligand expression dataset: {adata.shape}')
-# logger.info(f'Receptor score dataset: {radata.shape}')
-logger.info(f'Got {len(receptors)} with paired annotated ligands')
-
-
-# // All of these will go to shared memory
-adata_in = adata.X
-adata_var = np.array(adata.var_names)
+# sc.pp.filter_genes(adata, min_cells=10)
+# logger.info(f'Dropped genes observed in < 10 cells: {adata.shape}')
+logger.info(f'Subsetting adata to the requested ligand: {ARGS.ligand}')
+adata_in = adata[:, adata.var_names == ARGS.ligand].X
+adata_var = np.array([ARGS.ligand])
+logger.info(f'New adata shape: {adata.shape} ({adata_var})')
 
 yL = np.array(adata.obs[ARGS.groupby])
 constraints_L = np.array(adata.obs[ARGS.constraint])
 
+# Clear the big adata
+del adata
+
+# # ------- Take care of receptor expression instead of score
+# if not ARGS.use_receptor_expression:
+#   radata = sc.read_h5ad(ARGS.radata_path)
+#   receptors = list(radata.var_names)
+#   receptors = [r for r in receptors if r in rl_pairs.keys()]
+# elif ARGS.use_receptor_expression:
+#   radata = None
+#   receptors = [r for r in list(adata.var_names) if r in rl_pairs.keys()]
+
+# logger.info(f'Ligand expression dataset: {adata.shape}')
+# # logger.info(f'Receptor score dataset: {radata.shape}')
+# logger.info(f'Got {len(receptors)} with paired annotated ligands')
+
+
+# // All of these will go to shared memory
+# adata_in = adata.X
+# adata_var = np.array(adata.var_names)
+
 # ------- Take care of receptor expression instead of score
-if radata is None:
+if ARGS.use_receptor_expression:
+  logger.warn('Use of receptor expression instead of receptor score is not well supported!!')
   r_adata_in = None
   r_adata_var = adata_var.copy()
   yR = yL
   constraints_R = constraints_L
 else:
-  r_adata_in = radata.X
-  r_adata_var = np.array(radata.var_names) # same as our list of receptors above
+  radata = sc.read_h5ad(ARGS.radata_path)
+  if len(ARGS.exclude) > 0:
+    logger.info(f'Removing cells in groups: {ARGS.exclude}')
+    radata = radata[~radata.obs[ARGS.groupby].isin(ARGS.exclude)]
+
+  r_adata_in = radata[:, radata.var_names == ARGS.receptor].X
+  # r_adata_var = np.array(radata.var_names) # same as our list of receptors above
+  r_adata_var = np.array([ARGS.receptor])
   yR = np.array(radata.obs[ARGS.groupby])
   constraints_R = np.array(radata.obs[ARGS.constraint])
 

@@ -4,34 +4,26 @@ import time
 from scipy.sparse import lil_matrix, csr_matrix, issparse, isspmatrix_lil
 
 from numba import jit, prange
+import networkx as nx
 
 __all__ = [
   'group_cells',
-  'calc_interactions'
+  'calc_interactions',
+  'df2network'
 ]
 
-# fns = {
-#   'mean': np.mean,
-#   'sum': np.sum,
-#   'percent': lambda x: (x > 0).mean(),
-# }
-# def group_cells(x, y, u_y=None, min_cells=10, n=50, size=20, agg='mean', log=False):
-#   t0 = time.time()
-#   df = pd.DataFrame(x, columns=['gene_{k}' for k in range(x.shape[1])])
-#   cols = df.columns
-#   df['groups'] = y
-#   counts = df.groups.value_counts()
-#   if u_y is None:
-#     u_y = np.unique(y)
 
-#   df = df.loc[df.groups.isin(u_y)]
-#   xout = df.groupby('groups').apply(fns[agg]).loc[u_y, cols].values
-#   if log:
-#     xout = np.log1p(xout)
-#   t1 = time.time()
+def df2network(df, ligand, receptor):
+  """
+  Process the inter-celltype interactions from a single ligand/receptor channel
+  into a directed graph.
 
-#   # print(f' ------- group time {t1-t0:3.3f} xout={xout.shape}')
-#   return xout
+  Args:
+    
+  """
+  pass
+
+
 
 """
 numba versions of group_cells.

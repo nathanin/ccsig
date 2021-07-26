@@ -43,6 +43,13 @@ parser.add_argument(
   help='A column in adata.obs to use as cell groups for background gene expression'
 )
 parser.add_argument(
+  '--obs',
+  default=None, 
+  help='A table indexed by cell barcodes found in adata. If given, the groupby keyword '+\
+       'is assumed to refer to this table. Furthermore, only cells present in this table '+\
+       'will be scored.'
+)
+parser.add_argument(
   '--out', default=None, type=str,
   help='an h5ad file to stash results. if not specified, it defaults to converting the '+\
        'genelist_dir path into a file name'
@@ -70,9 +77,30 @@ for k, v in ARGS.__dict__.items():
 ray.init(num_cpus=ARGS.n_jobs)
 
 
-
 # // load data
 adata = sc.read_h5ad(ARGS.adata_path)
+
+if ARGS.obs is not None:
+  assert os.path.exists(ARGS.obs)
+  logger.info(f'Loading external obs from: {ARGS.obs}')
+  obs = pd.read_csv(ARGS.obs, index_col=0, header=0)
+  logger.info(f'Using obs table: {obs.shape}')
+
+  # make sure obs is a strict subset of adata:
+  inds = set(obs.index.tolist()) - set(adata.obs_names.tolist())
+  assert len(inds) == 0
+
+  if obs.shape[0] < adata.shape[0]:
+    logger.warning(f'external obs shaped smaller than the loaded adata: '+\
+                   f'{obs.shape[0]} vs {adata.shape[0]}. '+\
+                    'adata will be subsetted.')
+
+  # // that if statement was just to print a warning; we have to match the orders anyway.
+  # // so this always happens, even if obs and adata are the same shape.
+  adata = adata[obs.index]
+  
+else:
+  obs = adata.obs
 
 sc.pp.filter_genes(adata, min_cells = 10)
 logger.info(f'Reduced by thresholding the number of genes: {adata.shape}')
@@ -84,7 +112,7 @@ sc.pp.log1p(adata)
 gene_lists = sorted(glob(f'{ARGS.genelist_dir}/*.txt'))
 logger.info(f'Loaded {len(gene_lists)} gene lists')
 
-cell_groups = np.array(adata.obs[ARGS.groupby])
+cell_groups = np.array(obs[ARGS.groupby])
 
 
 
@@ -132,7 +160,7 @@ logger.info(f'Converting to AnnData')
 
 # TODO add descriptive information in uns
 rscores = AnnData(csr_matrix(list_scores.values), 
-                  obs = adata.obs,
+                  obs = obs,
                   var = pd.DataFrame(index = list_scores.columns),
                   uns = {'receptor_scoring_info': f'Receptor scoring'}
                   )
